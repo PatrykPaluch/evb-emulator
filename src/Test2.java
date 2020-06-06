@@ -35,7 +35,7 @@ public class Test2 {
                 int g = Integer.parseInt(rgbStr[1]);
                 int b = Integer.parseInt(rgbStr[2]);
 
-                System.out.println("Wysyłanie: "+r+" "+g+" "+" "+b);
+                System.out.println("Wysyłanie: "+r+" "+g+" "+b);
                 os.write(r);
                 os.write(g);
                 os.write(b);

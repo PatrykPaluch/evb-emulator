@@ -54,8 +54,8 @@ public class EvBEmulator {
     protected final ServerSocket uartServerSocket;
     private boolean uartReady;
     protected Socket uartSocket;
-    protected OutputStreamWriter tx;
-    protected InputStreamReader rx;
+    protected OutputStream tx;
+    protected InputStream rx;
     protected Thread uartConnectionThread;
 
     public EvBEmulator(){
@@ -104,8 +104,8 @@ public class EvBEmulator {
 
                         // Set connection
                         uartSocket = connection;
-                        tx = new OutputStreamWriter(uartSocket.getOutputStream());
-                        rx = new InputStreamReader(uartSocket.getInputStream());
+                        tx = uartSocket.getOutputStream();
+                        rx = uartSocket.getInputStream();
                         uartReady = true;
                         log("[SYSTEM] UART connected!");
                     }
@@ -325,7 +325,7 @@ public class EvBEmulator {
         programThread.start();
     }
 
-    public int uartRead(char[] cBuf, int offset, int len){
+    public int uartRead(byte[] cBuf, int offset, int len){
         if (uartReady) {
             try {
                 int r = rx.read(cBuf, offset, len);
@@ -360,7 +360,7 @@ public class EvBEmulator {
         }
     }
 
-    public void uartWrite(char[] cBuf, int offset, int len){
+    public void uartWrite(byte[] cBuf, int offset, int len){
         if (uartReady) {
             try {
                 tx.write(cBuf, offset, len);
@@ -370,7 +370,7 @@ public class EvBEmulator {
         }
     }
 
-    public void uartWrite(String str){
+    public void uartWrite(byte[] str){
         if (uartReady) {
             try {
                 tx.write(str);

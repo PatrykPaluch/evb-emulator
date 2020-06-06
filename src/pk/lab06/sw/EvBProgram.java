@@ -39,47 +39,47 @@ public abstract class EvBProgram {
     public abstract String getAuthor();
 
     /**
-     * Reads single character from UART.
-     * @return The character read, or -1 if the end of the stream has been reached
+     * Reads single byte from UART.
+     * @return The byte read, or -1 if the end of the stream has been reached
      */
     public int read(){
         return parent.uartRead();
     }
 
     /**
-     * Reads characters into a portion of an array from UART.
+     * Reads byte array into a buffer from UART.
      * @param cBuf Destination buffer
-     * @param offset Offset at which to start storing characters
-     * @param len Maximum number of characters to read
-     * @return The number of characters read, or -1 if the end of the stream has been reached
+     * @param offset Offset at which to start storing bytes
+     * @param len Maximum number of bytes to read
+     * @return The number of bytes read, or -1 if the end of the stream has been reached
      */
-    public int read(char[] cBuf, int offset, int len) {
+    public int read(byte[] cBuf, int offset, int len) {
         return parent.uartRead(cBuf, offset, len);
     }
 
     /**
-     * Writes a single character to UART.
-     * @param c Character to be written
+     * Writes a single byte to UART.
+     * @param c byte to be written
      */
     public void write(int c){
         parent.uartWrite(c);
     }
 
     /**
-     * Writes a portion of an array of characters to UART.
-     * @param cBuf Buffer of characters
-     * @param offset Offset from which to start writing characters
-     * @param len Number of characters to write
+     * Writes specific byte array to UART.
+     * @param cBuf Buffer of bytes
+     * @param offset Offset from which to start writing bytes
+     * @param len Number of bytes to write
      */
-    public void write(char[] cBuf, int offset, int len){
+    public void write(byte[] cBuf, int offset, int len){
         parent.uartWrite(cBuf, offset, len);
     }
 
     /**
-     * Writes a string to UART.
-     * @param str String to be written
+     * Writes specific byte array to UART.
+     * @param str Bytes to be written
      */
-    public void write(String str){
+    public void write(byte[] str){
         parent.uartWrite(str);
     }
 

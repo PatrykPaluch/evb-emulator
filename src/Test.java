@@ -42,15 +42,16 @@ public class Test {
                 setScreenText(5, 1, ""+pot+"       ");
 
                 // Odczyt danych z "UART" - 3 liczby
-                char[] rgbData = new char[3];
+                byte[] rgbData = new byte[3];
                 // Jeżeli UART jest podłączony to spowoduje zatrzymanie do czasu otrzymania danych
                 int d = read(rgbData, 0, 3);
+
                 if(d==3) {
                     //Ustawianie wartości R G B na diodę RGB
-                    pinRgbR(rgbData[0]);
-                    pinRgbG(rgbData[1]);
-                    pinRgbB(rgbData[2]);
-                    log("Kolor: "+(int)rgbData[0]+" "+(int)rgbData[1]+" "+(int)rgbData[2]);
+                    pinRgbR(rgbData[0]&0xFF);
+                    pinRgbG(rgbData[1]&0xFF);
+                    pinRgbB(rgbData[2]&0xFF);
+                    log("Kolor: "+((int)rgbData[0]&0xFF)+" "+((int)rgbData[1]&0xFF)+" "+((int)rgbData[2]&0xFF));
                 }
 
                 // Zatrzymanie programu na 250ms
