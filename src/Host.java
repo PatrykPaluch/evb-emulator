@@ -4,9 +4,15 @@ import java.io.OutputStream;
 import java.net.Socket;
 import java.util.Scanner;
 import java.math.BigInteger;
-import A.*;
-
-public class Panel {
+import A.Utils;
+/**
+ * Host EvB
+ * Autor: Konrad Paluch
+ * Data: 2020 06 06
+ * Na potrzeby projektu z przedmiotu Systemy Wbudowane
+ * Grupa lab06 PK 2020
+ */
+public class Host {
 	
     public static void main(String[] args) {
 		
@@ -17,6 +23,16 @@ public class Panel {
             final int port = 9999;
 			Utils utils = new Utils();
 			
+			//
+			/*
+			byte [] RAM = utils.intToBytes( (int)(131072) );
+						
+			for (int i = 0; i < RAM.length; i++) {
+				System.out.println("\t[RAM]"+i +"=" + RAM[i]);
+			}
+			System.out.println("\t[Powrot]"+"=" + utils.byteToInt(RAM) );
+			*/
+			//
             System.out.println("[System] Laczenie z " + host + ":" + port);
 
             Socket s = new Socket(host, port);
@@ -30,15 +46,15 @@ public class Panel {
             System.out.println("[System] Polaczono!");
 			System.out.println("[0] Wyjscie.");
 			//System.out.println("[1] Prosba o Dane glosnosci.");
-			//System.out.println("[2] Prosba o Dane obciazenia systemu. [NOT IMPLEMENTED]");
-			//System.out.println("[3] Prosba o informacje o systemie. [NOT IMPLEMENTED]");
+			//System.out.println("[2] Prosba o Dane obciazenia systemu. ");
+			//System.out.println("[3] Prosba o informacje o systemie. ");
 			//System.out.println("[4] Prosba o informacje o przyciskach. [NOT IMPLEMENTED]");
 			//System.out.println("[10] [value] Ustawienie glosnosci 0-1023.");
 			//System.out.println("[11] Przycisk Funkcji. [NOT IMPLEMENTED]");
 			System.out.println("[64] Prosba o odczytanie glosnosci.");
-			//System.out.println("[74] Wyslanie informacji o systemie. [NOT IMPLEMENTED]");
+			//System.out.println("[74] Wyslanie informacji o systemie.");
 			//System.out.println("[75] Wyslanie glosnosci.");
-			//System.out.println("[76] Wyslanie obciazenia systemu. [NOT IMPLEMENTED]");
+			//System.out.println("[76] Wyslanie obciazenia systemu.");
 			System.out.println("[77] [r g b] Wyslanie koloru.");
 			//System.out.println("[78] Wyslanie informacji o przyciskach. [NOT IMPLEMENTED]");
 			System.out.println("[128] [message] Ping");
@@ -86,19 +102,6 @@ public class Panel {
 								}
 								break;
 							}
-							/*
-							case 74:
-							{
-								byte [] packet = utils.emptyPacket((byte)74);
-								byte RAM = utils.intToBytes(2048);
-								for (int i=0; i<RAM.length; i++) {
-									packet[i+1] = RAM[i];
-								}
-								packet[6] = (byte)(85);
-								utils.send(packet, os);
-								break;
-							}
-							*/
 							case 128:
 							{
 								byte [] packet = utils.emptyPacket((byte)128);
@@ -127,7 +130,7 @@ public class Panel {
             s.close();
         }
 		catch (Exception er) {
-			System.err.println( "Napotkano problem: " + er.getMessage() );
+			System.err.println( "[1] Napotkano problem: " + er.getMessage() );
 			return;
         }
     }
@@ -141,6 +144,8 @@ class Listener implements Runnable {
 	boolean isRunning;
 	Utils utils;
 	double glosnosc; // TODO
+	Runtime runtime;
+	Button [] buttons;
 	
 	Listener(InputStream is, OutputStream os) {
 		this.is = is;
@@ -148,6 +153,14 @@ class Listener implements Runnable {
 		this.isRunning = true;
 		this.utils = new Utils();
 		this.glosnosc = 75;
+		this.runtime = Runtime.getRuntime();
+		this.buttons = new Button[8];
+		for (int i=0; i<8; i++) {
+			buttons[i] = new Button();
+		}
+		
+		//DEBUG
+		buttons[1].setCommand("notepad.exe");
 	}
 	
 	void terminate() {
@@ -159,7 +172,7 @@ class Listener implements Runnable {
 	@Override
 	public void run() {	
 		try {
-			while(isRunning)
+			while(this.isRunning)
 			{
 				byte [] packet = utils.emptyPacket();
 				
@@ -170,7 +183,6 @@ class Listener implements Runnable {
 				switch( utils.readableByte(packet[0]) ) {
 					case 1:
 					{
-						int intvalue = utils.byteToInt( packet[1], packet[2]);
 						System.out.println("\t[Prosba o wyslanie glosnosci]" );
 						
 						// send response
@@ -184,19 +196,31 @@ class Listener implements Runnable {
 					}
 					case 2:
 					{
-						int intvalue = utils.byteToInt( packet[1], packet[2]);
-						System.out.println("\tcontent: 'null' [Prosba o wyslanie danych obciazenia systemu]" );
+						System.out.println("\t[Prosba o wyslanie danych obciazenia systemu]" );
+
+						// send response
+						long allocatedMemory = runtime.totalMemory()/1024;
+						System.out.println("\t[allocatedMemory]" + allocatedMemory);
+						byte [] outgoing_packet = utils.emptyPacket((byte)(76));
+						byte [] RAM = utils.intToBytes( (int)(allocatedMemory) );
+						
+						for (int i = 0; i < RAM.length; i++) {
+							outgoing_packet[i+1] = RAM[i];
+						}
+						outgoing_packet[6] = (byte)(60); // Brak łatwo dostepnego czujnika w javie, więc wartość testowo ustawiona na "sztywno".
+						utils.send(outgoing_packet, os);
 						break;
 					}
 					case 3:
 					{
-						int intvalue = utils.byteToInt( packet[1], packet[2]);
-						System.out.println("\tcontent: 'null' [Prosba o informacje o systemie]" );
+						System.out.println("\t[Prosba o informacje o systemie]" );
 						
 						// send response
+						long maxMemory = runtime.maxMemory()/1024;
+						System.out.println("\t[maxMemory]" + maxMemory);
 						byte [] outgoing_packet = utils.emptyPacket((byte)(74));
-						byte [] RAM = utils.intToBytes( (int)(2048) );
-						for (int i=0; i<RAM.length; i++) {
+						byte [] RAM = utils.intToBytes( (int)(maxMemory) );
+						for (int i = 0; i < RAM.length; i++) {
 							outgoing_packet[i+1] = RAM[i];
 						}
 						outgoing_packet[6] = (byte)(85);
@@ -205,8 +229,25 @@ class Listener implements Runnable {
 					}
 					case 4:
 					{
-						int intvalue = utils.byteToInt( packet[1], packet[2]);
-						System.out.println("\tcontent: 'null' [Prosba o informacje o przyciskach]" );
+						int button_number = utils.byteToInt( (byte)(0), packet[1] );
+						System.out.println("\t[Prosba o informacje o przycisku "+button_number+"]" );
+						// send response
+						
+						byte[] b = this.buttons[button_number].getDescription().getBytes();
+
+						byte [] outgoing_packet = utils.emptyPacket((byte)78);
+						outgoing_packet[1] = (byte)(button_number);
+						
+						for (int i = 2; i < 8 && i < b.length+2; i++) {
+							outgoing_packet[i] = b[i-2];
+						}
+						utils.send(outgoing_packet, os); // First Packet
+						
+						outgoing_packet = utils.emptyPacket();
+						for (int i = 0; i < 8 && (i+6) < b.length; i++) {
+							outgoing_packet[i] = b[i+6];
+						}
+						utils.send(outgoing_packet, os); // Second Packet
 						break;
 					}
 					case 10:
@@ -217,23 +258,42 @@ class Listener implements Runnable {
 						System.out.println("Ustawiono glosnosc na: " + (int)(this.glosnosc*100) + "%" );
 						break;
 					}
-					case 11: // TODO
+					case 11:
 					{
-						int button_number = utils.byteToInt( (byte)(0), packet[1] );
-						// TODO
-						// Host po otrzymaniu powinien wykonać przypisaną do danego przycisku funkcję. Host sam ustala przypisane funkcje.
+						try {
+							int button_number = utils.byteToInt( (byte)(0), packet[1] );
+							if (buttons[button_number].getCommand().equals("")) break;
+							// Host po otrzymaniu powinien wykonać przypisaną do danego przycisku funkcję. Host sam ustala przypisane funkcje.
+							Process process = runtime.exec(buttons[button_number].getCommand(), null);
+							
+							// deal with OutputStream to send inputs
+							process.getOutputStream();
+							 
+							// deal with InputStream to get ordinary outputs
+							process.getInputStream();
+							 
+							// deal with ErrorStream to get error outputs
+							process.getErrorStream();
+						}
+						catch (Exception e) {
+							System.out.println("Invalid command in button.");
+							break;
+						}
+
 						break;
-					}/*
+					}
 					case 75:
 					{
 						int intvalue = utils.byteToInt( packet[1], packet[2]);
 						System.out.println("\tcontent: '" + intvalue + "'" );
 						break;
-					}*/
+					}
 					case 128:
 					{
 						
 						// send response
+						String str = new String(packet);
+						System.out.println("\tcontent: '" + str.substring(1, str.length()).replace("\0", "") + "'");
 						byte[] outgoing_packet = utils.emptyPacket( (byte)129 );
 						for (int i = 1; i < 8; i++) {
 							outgoing_packet[i] = packet[i];
@@ -251,8 +311,47 @@ class Listener implements Runnable {
 			}	
 		}
 		catch (Exception er) {
-			System.err.println( "Napotkano problem: " + er.getMessage() );
-
+			System.err.println( "[2] Napotkano problem: " + er.getMessage() );
+			this.isRunning = false;
+			return;
         }
 	}
+}
+
+
+class Button {
+	private String description;
+	private String command;
+	
+	Button() {
+		description = "empty";
+		command = "";
+	}
+	
+	public void setDescription(String desc) {
+		if (description.length() > 14){
+			description = description.substring(0, 13);
+		}
+		this.description = description;
+	}
+	
+	public void setCommand(String command) {
+		this.command = command;
+	}
+	
+	public void set(String desc, String command) {
+		if (description.length() > 14){
+			description = description.substring(0, 13);
+		}
+		this.description = description;
+		this.command = command;
+	}
+	
+	public String getDescription() {
+		return this.description;
+	}
+	public String getCommand() {
+		return this.command;
+	}
+	
 }

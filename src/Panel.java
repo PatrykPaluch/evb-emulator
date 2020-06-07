@@ -1,18 +1,16 @@
-package src;
-
 import pk.lab06.sw.EvBEmulator;
 import pk.lab06.sw.EvBProgram;
 import java.math.BigInteger;
 
-import A.*;
+import A.Utils;
 /**
- * Host EvB
+ * Panel EvB
  * Autor: Konrad Paluch
  * Data: 2020 06 06
  * Na potrzeby projektu z przedmiotu Systemy Wbudowane
  * Grupa lab06 PK 2020
  */
-public class Host {
+public class Panel {
 	static Utils utils;
     public static void main(String[] args) {
 		utils = new Utils();
@@ -43,8 +41,12 @@ public class Host {
 				packet = emptyPacket( (byte)3 );
 				write(packet, 0, 8);
 				
-				packet = emptyPacket( (byte)4 );
-				write(packet, 0, 8);
+				// Get information of all 8 buttons.
+				for (int i=0; i<8; i++) {
+					packet = emptyPacket( (byte)4 );
+					packet[1] = (byte)(i);
+					write(packet, 0, 8);
+				}
             }
 
             @Override
@@ -52,10 +54,19 @@ public class Host {
                 // Kopiowanie stanu przycisków na ledy
                 int st = getPinSwitch();
                 pinLED(st);
-
-                // Miganie LED numer 7 (nie zależnie od przycisku 7)
+				
+				// Obsługa przycisków
+				for (int i=0; i<8; i++) {
+					if( getPinSwitch(i) ) {
+						byte[] packet = emptyPacket( (byte)11 );
+						packet[1] = (byte)(i);
+						write(packet, 0, 8);
+					}
+				}
+/*
                 pinLED(7, blik);
                 blik = !blik;
+*/
 
                 // Wyświetlenie wartości potencjometru
                 setScreenText(0, textScreenUpper);
@@ -98,11 +109,38 @@ public class Host {
 							write(packet, 0, 8);
 							break;
 						}
+						case 74:
+						{
+							byte [] ram = new byte[4];
+							for (int i = 1; i < 4; i++) {
+								ram[i-1] = data[i];
+							}
+							int int_ram = utils.byteToInt(ram);
+							
+							byte tmp = data[6];
+							
+							log("Max Memory: " + int_ram + " KB" );
+							log("Max CPU Temperature: " + utils.readableByte(tmp)+ " \u00B0C" );
+							break;
+						}
 						case 75:
 						{
 							int value = utils.byteToInt( data[2], data[1]);
 							textScreenUpper = "Glosnosc:";
 							textScreenLower = "" + value;
+							break;
+						}
+						case 76:
+						{
+							byte [] ram = new byte[4];
+							for (int i = 1; i < 4; i++) {
+								ram[i-1] = data[i];
+							}
+							int int_ram = utils.byteToInt(ram);
+							
+							byte tmp = data[6];
+							log("Memory Usage: " + int_ram + " KB" );
+							log("Current CPU Temperature: " + utils.readableByte(tmp) + " \u00B0C");
 							break;
 						}
 						case 77:
@@ -112,8 +150,24 @@ public class Host {
 							pinRgbB(utils.readableByte(data[3]));
 							break;
 						}
+						case 78:
+						{
+							String str = new String(data);
+							str = str.substring(2, str.length());
+							log("Button " + data[1] + ": " + str);
+							
+							data = new byte[8];
+							mlen = read(data, 0, 8);
+							showpacket(data);
+							str = new String(data);
+							log(str);
+							
+							break;
+						}
 						case 128:
 						{
+							String str = new String(data);
+							log("ping: '" + str.substring(1, str.length()).replace("\0", "") + "'");
 							byte[] packet = emptyPacket( (byte)129 );
 							for (int i = 1; i < 8; i++) {
 								packet[i] = data[i];
@@ -124,7 +178,7 @@ public class Host {
 						case 129:
 						{
 							String str = new String(data);
-							System.out.println("\tcontent: '" + str.substring(1, str.length()) + "'");
+							log("pong: '" + str.substring(1, str.length()) + "'");
 							break;
 						}
 						default:

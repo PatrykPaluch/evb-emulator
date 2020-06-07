@@ -42,10 +42,35 @@ public class Utils {
 		}
 		return ret;
 	}
+	
+	public static int byteToIntInv(byte [] bytes) {
+		int ret = 0;
+		for (int i=bytes.length-1; i>=0; i--) {
+			ret <<= 8;
+			ret |= (int)bytes[i] & 0xFF;
+		}
+		return ret;
+	}
+	
 	public static int readableByte(byte b) {
 		return ((int)b&0xFF);
 	}
 	public static byte[] intToBytes(int value) {
-		return BigInteger.valueOf( value ).toByteArray();
+		byte [] bytes = BigInteger.valueOf( value ).toByteArray();
+		byte [] ret;
+		if (bytes.length < 4) {
+			int l = bytes.length;
+			byte [] tmp = bytes;
+			ret = new byte[4];
+			int do_dodania = 4 - l;
+			for (int i=0; i<do_dodania; i++) {
+				ret[i] = 0;
+			}
+			for (int i=0; i<tmp.length; i++) {
+				ret[do_dodania+i] = tmp[i];
+			}
+		}
+		else ret = bytes;
+		return ret;
 	}
 }
