@@ -1,8 +1,10 @@
+package tests;
+
 import pk.lab06.sw.EvBEmulator;
 import pk.lab06.sw.EvBProgram;
 
 /**
- * Test "Emulatora" EvB
+ * tests.Test "Emulatora" EvB
  * Autor: Patryk Paluch
  * Data: 2020 06 06
  * Na potrzeby projektu z przedmiotu Systemy Wbudowane
@@ -13,7 +15,6 @@ public class Test {
     public static void main(String[] args) {
         EvBEmulator em = new EvBEmulator();
         em.setProgram(new EvBProgram() {
-
             @Override
             public String getAuthor() {
                 return "Patryk Paluch";
