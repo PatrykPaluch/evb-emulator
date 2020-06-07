@@ -24,6 +24,7 @@ public class Panel {
 
 			String textScreenUpper = " Potencjometr:  ";
 			String textScreenLower = "                ";
+			int potentiometer = -1;
 		
             @Override
             public String getAuthor() {
@@ -33,6 +34,7 @@ public class Panel {
             boolean blik;
             @Override
             public void init() {
+				potentiometer = -1;
 				textScreenLower = "" + getPotentiometer();
                 blik = false;
 				
@@ -75,6 +77,21 @@ public class Panel {
 						}
 					}
 				}
+				
+				// Update potencjometr
+				if(getPotentiometer() != potentiometer) {
+					potentiometer = getPotentiometer();
+					byte[] packet = emptyPacket( (byte)10 );
+					byte[] value = utils.intToBytes(getPotentiometer());
+					for (int i=2; i<4; i++) {
+						packet[i-1] = value[i];
+					}
+					write(packet, 0, 8);
+					
+					// Zazadaj danych o glosnosci
+					packet = emptyPacket( (byte)1 );
+					write(packet, 0, 8);
+				}
 
                 // Wyświetlenie wartości potencjometru
                 setScreenText(0, textScreenUpper);
@@ -83,10 +100,14 @@ public class Panel {
                 // Jeżeli UART jest podłączony to spowoduje zatrzymanie do czasu otrzymania danych
 				
                 byte[] data = new byte[8];
-                int mlen = read(data, 0, 8);
-		
-				//System.out.println("mlen: " + mlen);
-				System.out.println(mlen);
+                int mlen = -1;
+				
+				// Sprawdza czy dostępna jest wiadomość
+				// Zapobiega zablokowaniu socketu
+				if( available() >= 8) {
+					mlen = read(data, 0, 8);
+				}
+
 				if (mlen != -1)
 				{
 					int type = data[0];
@@ -133,8 +154,9 @@ public class Panel {
 						}
 						case 75:
 						{
-							int value = utils.byteToInt( data[2], data[1]);
-							log("value: " + value);
+							byte [] arr = { data[1], data[2], data[3], data[4] };
+							int value = utils.byteToInt( arr );
+							log("Glosnosc: " + value);
 							textScreenUpper = "   Glosnosc:    ";
 							String tmp = "";
 							for(int i=0; i<8-String.valueOf(value).length()/2; i++){

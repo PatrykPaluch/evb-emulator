@@ -127,7 +127,7 @@ public class Host {
 						}
 					}
 				}
-				// W przypadku zakonczenie procesu nasluchujacego, zakoncz program
+				// W przypadku zakonczenie procesu nasluchujacego, zakoncz proces w tle
 				if (!listener.isRunning()) {
 					thr_listen.stop();
 					s.close();
@@ -233,7 +233,7 @@ class Listener implements Runnable {
 						
 						// send response
 						byte [] outgoing_packet = utils.emptyPacket((byte)(75));
-						byte [] value = utils.intToBytes((int)(this.glosnosc));
+						byte [] value = utils.intToBytes((int)(this.glosnosc*100));
 						for (int i=0; i<value.length; i++) {
 							outgoing_packet[i+1] = value[i];
 						}
@@ -323,7 +323,7 @@ class Listener implements Runnable {
 							process.getErrorStream();
 						}
 						catch (Exception e) {
-							System.out.println("Invalid command in button.");
+							System.out.println("Invalid command in button or command arguments.");
 							break;
 						}
 

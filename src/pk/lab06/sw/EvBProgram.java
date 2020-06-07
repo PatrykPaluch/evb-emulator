@@ -1,5 +1,7 @@
 package pk.lab06.sw;
 
+import java.io.IOException;
+
 /**
  *   <p>
  *      Provides all needed functionality to create programs that uses
@@ -55,6 +57,23 @@ public abstract class EvBProgram {
      */
     public int read(byte[] cBuf, int offset, int len) {
         return parent.uartRead(cBuf, offset, len);
+    }
+
+    /**
+     * Returns an estimate of the number of bytes that can be read (or skipped over) from this input stream without blocking by the next invocation of a method for this input stream.
+     * @return an estimate of the number of bytes that can be read (or skipped over) from this input stream without blocking or 0 when it reaches the end of the input stream.
+     */
+    public int available(){
+        return parent.uartAvailable();
+    }
+
+    /**
+     * Skips over and discards n bytes of data from this input stream. The skip method may, for a variety of reasons, end up skipping over some smaller number of bytes, possibly 0.
+     * @param n the number of bytes to be skipped
+     * @return the actual number of bytes skipped
+     */
+    public long skip(long n){
+        return parent.uartSkip(n);
     }
 
     /**

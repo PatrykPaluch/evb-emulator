@@ -337,6 +337,7 @@ public class EvBEmulator {
         }
         return -1;
     }
+
     public int uartRead(){
         if (uartReady) {
             try {
@@ -378,6 +379,28 @@ public class EvBEmulator {
                 closeUartConnection();
             }
         }
+    }
+
+    public int uartAvailable(){
+        if(uartReady){
+            try {
+                return rx.available();
+            } catch (IOException er){
+                closeUartConnection();
+            }
+        }
+        return 0;
+    }
+
+    public long uartSkip(long n){
+        if(uartReady){
+            try {
+                return rx.skip(n);
+            } catch (IOException er){
+                closeUartConnection();;
+            }
+        }
+        return 0;
     }
 
 
