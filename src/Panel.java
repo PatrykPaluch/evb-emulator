@@ -15,11 +15,15 @@ public class Panel {
     public static void main(String[] args) {
 		utils = new Utils();
         EvBEmulator em = new EvBEmulator();
+		boolean [] justpressed = new boolean[8];
+		for (int i=0; i<8; i++) {
+			justpressed[i] = false;
+		}
 		
         em.setProgram(new EvBProgram() {
 
-			String textScreenUpper = "Potencjometr: ";
-			String textScreenLower = "";
+			String textScreenUpper = " Potencjometr:  ";
+			String textScreenLower = "                ";
 		
             @Override
             public String getAuthor() {
@@ -42,11 +46,13 @@ public class Panel {
 				write(packet, 0, 8);
 				
 				// Get information of all 8 buttons.
+				/*
 				for (int i=0; i<8; i++) {
 					packet = emptyPacket( (byte)4 );
 					packet[1] = (byte)(i);
 					write(packet, 0, 8);
 				}
+				*/
             }
 
             @Override
@@ -57,16 +63,18 @@ public class Panel {
 				
 				// Obsługa przycisków
 				for (int i=0; i<8; i++) {
-					if( getPinSwitch(i) ) {
-						byte[] packet = emptyPacket( (byte)11 );
-						packet[1] = (byte)(i);
-						write(packet, 0, 8);
+					
+					if (justpressed[i] != getPinSwitch(i) ) {
+						justpressed[i] = getPinSwitch(i);
+						
+						if( getPinSwitch(i) ) {
+							
+							byte[] packet = emptyPacket( (byte)11 );
+							packet[1] = (byte)(i);
+							write(packet, 0, 8);
+						}
 					}
 				}
-/*
-                pinLED(7, blik);
-                blik = !blik;
-*/
 
                 // Wyświetlenie wartości potencjometru
                 setScreenText(0, textScreenUpper);
@@ -78,7 +86,7 @@ public class Panel {
                 int mlen = read(data, 0, 8);
 		
 				//System.out.println("mlen: " + mlen);
-				
+				System.out.println(mlen);
 				if (mlen != -1)
 				{
 					int type = data[0];
@@ -126,8 +134,13 @@ public class Panel {
 						case 75:
 						{
 							int value = utils.byteToInt( data[2], data[1]);
-							textScreenUpper = "Glosnosc:";
-							textScreenLower = "" + value;
+							log("value: " + value);
+							textScreenUpper = "   Glosnosc:    ";
+							String tmp = "";
+							for(int i=0; i<8-String.valueOf(value).length()/2; i++){
+								tmp = tmp + " ";
+							}
+							textScreenLower = tmp + value + tmp;
 							break;
 						}
 						case 76:

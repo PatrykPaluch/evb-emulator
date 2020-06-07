@@ -4,6 +4,10 @@ import java.io.OutputStream;
 import java.net.Socket;
 import java.util.Scanner;
 import java.math.BigInteger;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.FileNotFoundException;
+import java.util.Scanner;
 import A.Utils;
 /**
  * Host EvB
@@ -17,7 +21,12 @@ public class Host {
     public static void main(String[] args) {
 		
         Scanner sc = new Scanner(System.in);
-		
+		InputStream is;
+		OutputStream os;
+		Listener listener;
+
+		Thread thr_listen;
+			
         try {
             final String host = "127.0.0.1";
             final int port = 9999;
@@ -36,11 +45,10 @@ public class Host {
             System.out.println("[System] Laczenie z " + host + ":" + port);
 
             Socket s = new Socket(host, port);
-            InputStream is = s.getInputStream();
-            OutputStream os = s.getOutputStream();
-			Listener listener = new Listener(is, os);
-
-			Thread thr_listen = new Thread(listener, "Listener-Thread");
+            is = s.getInputStream();
+            os = s.getOutputStream();
+			listener = new Listener(is, os);
+			thr_listen = new Thread(listener, "Listener-Thread");
 			thr_listen.start();
 		
             System.out.println("[System] Polaczono!");
@@ -67,10 +75,9 @@ public class Host {
 				
                 String[] command = line.split(" ");
 				
-				
-				
+
 				if (command[0].equals("0"))
-					break;
+					listener.terminate();
 				
 				if (command[0].equals("send")) {
 					
@@ -122,6 +129,8 @@ public class Host {
 				}
 				// W przypadku zakonczenie procesu nasluchujacego, zakoncz program
 				if (!listener.isRunning()) {
+					thr_listen.stop();
+					s.close();
 					break;
 				}
             }
@@ -165,9 +174,46 @@ class Listener implements Runnable {
 	
 	void terminate() {
 		this.isRunning = false;
+		saveButtons();
 	}
 	public boolean isRunning() {
 		return this.isRunning;
+	}
+	
+	private void loadButtons(){
+		try {
+			File myObj = new File("buttons.txt");
+			Scanner myReader = new Scanner(myObj);
+			int i = 0;
+			while (myReader.hasNextLine()) {
+				String description = myReader.nextLine();
+				buttons[i].setDescription(description);
+				String command = myReader.nextLine();
+				buttons[i].setCommand(description);
+				String emptyLine = myReader.nextLine();
+			}
+			myReader.close();
+		}
+		catch (FileNotFoundException e) {
+			System.out.println("An error occurred.");
+			e.printStackTrace();
+		}
+		
+	}
+	private void saveButtons(){
+		try {
+			FileWriter myWriter = new FileWriter("buttons.txt");
+			for (int i=0; i<8; i++) {
+				myWriter.write(buttons[i].getDescription() + '\n');
+				myWriter.write(buttons[i].getCommand() + '\n');
+				myWriter.write('\n');
+			}
+			myWriter.close();
+		}
+		catch (IOException e) {
+			System.out.println("An error occurred.");
+			e.printStackTrace();
+		}
 	}
 	@Override
 	public void run() {	
@@ -200,7 +246,7 @@ class Listener implements Runnable {
 
 						// send response
 						long allocatedMemory = runtime.totalMemory()/1024;
-						System.out.println("\t[allocatedMemory]" + allocatedMemory);
+						System.out.println("\t[allocatedMemory] " + allocatedMemory);
 						byte [] outgoing_packet = utils.emptyPacket((byte)(76));
 						byte [] RAM = utils.intToBytes( (int)(allocatedMemory) );
 						
@@ -217,7 +263,7 @@ class Listener implements Runnable {
 						
 						// send response
 						long maxMemory = runtime.maxMemory()/1024;
-						System.out.println("\t[maxMemory]" + maxMemory);
+						System.out.println("\t[maxMemory] " + maxMemory);
 						byte [] outgoing_packet = utils.emptyPacket((byte)(74));
 						byte [] RAM = utils.intToBytes( (int)(maxMemory) );
 						for (int i = 0; i < RAM.length; i++) {
@@ -262,6 +308,7 @@ class Listener implements Runnable {
 					{
 						try {
 							int button_number = utils.byteToInt( (byte)(0), packet[1] );
+							System.out.println("Wcisnieto przycisk: " + button_number );
 							if (buttons[button_number].getCommand().equals("")) break;
 							// Host po otrzymaniu powinien wykonać przypisaną do danego przycisku funkcję. Host sam ustala przypisane funkcje.
 							Process process = runtime.exec(buttons[button_number].getCommand(), null);
@@ -313,8 +360,10 @@ class Listener implements Runnable {
 		catch (Exception er) {
 			System.err.println( "[2] Napotkano problem: " + er.getMessage() );
 			this.isRunning = false;
+			saveButtons();
 			return;
         }
+		saveButtons();
 	}
 }
 
