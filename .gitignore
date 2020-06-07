@@ -73,3 +73,6 @@ fabric.properties
 # Other
 docs/
 export/
+
+*.class
+*.jar
