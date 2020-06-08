@@ -9,18 +9,20 @@ import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Control;
 import javax.sound.sampled.FloatControl;
 import javax.sound.sampled.Line;
+import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.Mixer;
+import javax.sound.sampled.Port;
 import javax.sound.sampled.Control.Type;
 import javax.sound.sampled.CompoundControl;
 
+
 public class Utils {
-
-	private Utils() { }
-
-
-	public static boolean setVolume(int value) {
+	
+	boolean b;
+	
+	public static void setVolume(int volume) {
 		try {
-
+			
 			Mixer.Info[] mixerInfos = AudioSystem.getMixerInfo();
 			for (int i = 0; i < mixerInfos.length; i++)
 			{
@@ -32,18 +34,16 @@ public class Utils {
 					Line line = AudioSystem.getLine(targetLineInfos[j]);
 					line.open();
 					FloatControl control = (FloatControl) line.getControl(FloatControl.Type.VOLUME);
-
-					control.setValue( value );
+					control.setValue( (float)(volume/100.0) );
 					line.close();
 				}
 
 			}
-
+		  
 		}
 		catch (Exception e) {
-			return false;
+			return;
 		}
-		return true;
 	}
 	
 	public static byte[] emptyPacket(){
@@ -62,6 +62,7 @@ public class Utils {
 	
 	public static byte[] receive(byte [] data, InputStream is) throws IOException {
 
+		if (is.available() < 8) return data;
 		int r = is.read(data, 0, 8);
 		if(r == -1) return data;
 
@@ -135,7 +136,26 @@ public class Utils {
 		}
 		return null;
 	}
+
+	public static long colorDifference(long r1, long g1, long b1, long r2, long g2, long b2) {
+		return abs(r1 - r2) + abs(g1 - g2) + abs(b1 - b2);
+	}
+	public static long abs(long i) {
+		if (i < 0) return -i;
+		return i;
+	}
+	
+	public void showLogs(boolean b) {
+		this.b = b;
+	}
+	
+	public void log(String str) {
+		if(b) {
+			System.out.println(str);
+		}
+	}
 }
+
 
 
 

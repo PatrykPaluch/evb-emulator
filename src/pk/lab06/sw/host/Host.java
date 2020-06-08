@@ -18,7 +18,6 @@ public class Host {
 	
     public static void main(String[] args) {
 		
-		
         Scanner sc = new Scanner(System.in);
 		InputStream is;
 		OutputStream os;
@@ -43,9 +42,7 @@ public class Host {
 			System.out.println("[0] Wyjscie.");
 			//System.out.println("[64] Prosba o odczytanie glosnosci.");
 			System.out.println("buttons");
-			System.out.println("send:");
-			System.out.println("\t[77] [r g b] Wyslanie koloru.");
-			System.out.println("\t[128] [message] Ping");
+			System.out.println("send [message]");
 			
             String line;
 			while (true) {
@@ -59,52 +56,15 @@ public class Host {
 					listener.terminate();
 				
 				if (command[0].equals("send")) {
-					
-					if(command.length == 1) {
-						System.out.println("Invalid command.");
 						
-					}
-					else {
-						switch (Integer.parseInt(command[1])) {
-							
-							case 64:
-							{
-								byte [] packet = Utils.emptyPacket((byte)64);
-								Utils.send(packet, os);
-								break;
-							}
-							case 77:
-							{
-								if (command.length == 5) {
-									
-									byte [] packet = Utils.emptyPacket((byte)77);
-									packet[1] = (byte)Integer.parseInt(command[2]);
-									packet[2] = (byte)Integer.parseInt(command[3]);
-									packet[3] = (byte)Integer.parseInt(command[4]);
-									Utils.send(packet, os);
-								}
-								else {
-									System.out.println("Invalid syntax");
-								}
-								break;
-							}
-							case 128:
-							{
-								byte [] packet = Utils.emptyPacket((byte)128);
-								if (command.length >= 3){
-									byte[] b = command[2].getBytes();
-									for (int i = 1; i < 8 && i < command[2].length()+1; i++) {
-										packet[i] = b[i-1];
-									}
-								}
-								Utils.send(packet, os);
-								break;
-							}
-							default:
-								System.out.println("Invalid command.");
-								break;
+					byte [] packet = Utils.emptyPacket((byte)128);
+					if (command.length >= 2){
+						byte[] b = command[1].getBytes();
+						for (int i = 1; i < 8 && i < command[1].length()+1; i++) {
+							packet[i] = b[i-1];
 						}
 					}
+					Utils.send(packet, os);
 				}
 				
 				if (command[0].equals("buttons")) {
@@ -129,11 +89,4 @@ public class Host {
 			return;
         }
     }
-	
 }
-
-
-
-
-
-
