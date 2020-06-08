@@ -60,15 +60,18 @@ public abstract class EvBProgram {
     }
 
     /**
-     * Returns an estimate of the number of bytes that can be read (or skipped over) from this input stream without blocking by the next invocation of a method for this input stream.
-     * @return an estimate of the number of bytes that can be read (or skipped over) from this input stream without blocking or 0 when it reaches the end of the input stream.
+     * Returns an estimate of the number of bytes that can be read (or skipped over) from this input stream without
+     * blocking by the next invocation of a method for this input stream.
+     * @return an estimate of the number of bytes that can be read (or skipped over) from this input stream without
+     *  blocking or 0 when it reaches the end of the input stream.
      */
     public int available(){
         return parent.uartAvailable();
     }
 
     /**
-     * Skips over and discards n bytes of data from this input stream. The skip method may, for a variety of reasons, end up skipping over some smaller number of bytes, possibly 0.
+     * Skips over and discards n bytes of data from this input stream. The skip method may, for a variety of reasons,
+     * end up skipping over some smaller number of bytes, possibly 0.
      * @param n the number of bytes to be skipped
      * @return the actual number of bytes skipped
      */
@@ -156,7 +159,7 @@ public abstract class EvBProgram {
      * @return true if button is pressed, false otherwise
      */
     public boolean getPinSwitch(int pin){
-        return parent.getPanelLed(pin);
+        return parent.getPanelSwitch(pin);
     }
 
     /**
