@@ -17,7 +17,7 @@ public class Test {
         em.setProgram(new EvBProgram() {
             @Override
             public String getAuthor() {
-                return "Patryk Paluch";
+                return "Patryk w Paluch";
             }
 
             boolean blik;
@@ -42,19 +42,20 @@ public class Test {
                 setScreenText(0,"Potencjometr: ");
                 setScreenText(5, 1, ""+pot+"       ");
 
-                // Odczyt danych z "UART" - 3 liczby
-                byte[] rgbData = new byte[3];
-                // Jeżeli UART jest podłączony to spowoduje zatrzymanie do czasu otrzymania danych
-                int d = read(rgbData, 0, 3);
+                if(available() >= 3) {
+                    // Odczyt danych z "UART" - 3 liczby
+                    byte[] rgbData = new byte[3];
+                    // Jeżeli UART jest podłączony to spowoduje zatrzymanie do czasu otrzymania danych
+                    int d = read(rgbData, 0, 3);
 
-                if(d==3) {
-                    //Ustawianie wartości R G B na diodę RGB
-                    pinRgbR(rgbData[0]&0xFF);
-                    pinRgbG(rgbData[1]&0xFF);
-                    pinRgbB(rgbData[2]&0xFF);
-                    log("Kolor: "+((int)rgbData[0]&0xFF)+" "+((int)rgbData[1]&0xFF)+" "+((int)rgbData[2]&0xFF));
+                    if (d == 3) {
+                        //Ustawianie wartości R G B na diodę RGB
+                        pinRgbR(rgbData[0] & 0xFF);
+                        pinRgbG(rgbData[1] & 0xFF);
+                        pinRgbB(rgbData[2] & 0xFF);
+                        log("Kolor: " + ((int) rgbData[0] & 0xFF) + " " + ((int) rgbData[1] & 0xFF) + " " + ((int) rgbData[2] & 0xFF));
+                    }
                 }
-
                 // Zatrzymanie programu na 250ms
                 delay(250);
             }
