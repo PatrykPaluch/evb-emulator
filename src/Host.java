@@ -310,7 +310,8 @@ class Listener implements Runnable {
 							System.out.println("Wcisnieto przycisk: " + button_number );
 							if (buttons[button_number].getCommand().equals("")) break;
 							// Host po otrzymaniu powinien wykonać przypisaną do danego przycisku funkcję. Host sam ustala przypisane funkcje.
-							Process process = runtime.exec(buttons[button_number].getCommand(), null);
+							String [] cmd = {"/bin/bash", "-c", buttons[button_number].getCommand()};
+							Process process = runtime.exec(cmd, null);
 							
 							// deal with OutputStream to send inputs
 							process.getOutputStream();
