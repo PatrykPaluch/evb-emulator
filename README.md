@@ -1,7 +1,7 @@
 # EvBEmulator
-Emulator jest dostarczony z source code'em przykładowej aplikacji (Plik [Test.java](src/Test.java)) 
+Emulator jest dostarczony z source code'em przykładowej aplikacji (Plik [tests.Test.java](src/Test.java)) 
 i z prostym programem pomagającym testować wysyłanie danych do załączonej aplikacji
-testowej (plik [Test2.java](src/Test2.java)).
+testowej (plik [tests.Test2.java](src/Test2.java)).
 
 ## Spis metod
 ```java
@@ -16,6 +16,8 @@ public int read(char[] cBuf, int offset, int len)
 public void write(int c)
 public void write(char[] cBuf, int offset, int len)
 public void write(String str)
+public int available();
+public long skip(long n);
 
 // Przyciski
 public int getPinSwitch()
