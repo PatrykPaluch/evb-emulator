@@ -73,4 +73,13 @@ public class Utils {
 		else ret = bytes;
 		return ret;
 	}
+	public static String centerText(String text, int width) {
+		
+		String tmp = "";
+		for(int i=0; i< width/2 - text.length()/2; i++) {
+			tmp = tmp + " ";
+		}
+		String ret = tmp + text + tmp;
+		return ret;
+	}
 }

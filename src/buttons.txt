@@ -1,24 +1,24 @@
-empty
-
-
-empty
+Text Editor
 notepad.exe
 
-empty
+show path
+dir
 
-
-empty
-
-
-empty
-
+show data
+data
 
 empty
-
-
 empty
 
-
+empty
 empty
 
+empty
+empty
+
+empty
+empty
+
+empty
+empty
 

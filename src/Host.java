@@ -10,15 +10,16 @@ import java.io.FileNotFoundException;
 import java.util.Scanner;
 import A.Utils;
 /**
- * Host EvB
+ * Host
  * Autor: Konrad Paluch
- * Data: 2020 06 06
+ * Data: 2020 06 08
  * Na potrzeby projektu z przedmiotu Systemy Wbudowane
  * Grupa lab06 PK 2020
  */
 public class Host {
 	
     public static void main(String[] args) {
+		
 		
         Scanner sc = new Scanner(System.in);
 		InputStream is;
@@ -31,17 +32,7 @@ public class Host {
             final String host = "127.0.0.1";
             final int port = 9999;
 			Utils utils = new Utils();
-			
-			//
-			/*
-			byte [] RAM = utils.intToBytes( (int)(131072) );
-						
-			for (int i = 0; i < RAM.length; i++) {
-				System.out.println("\t[RAM]"+i +"=" + RAM[i]);
-			}
-			System.out.println("\t[Powrot]"+"=" + utils.byteToInt(RAM) );
-			*/
-			//
+
             System.out.println("[System] Laczenie z " + host + ":" + port);
 
             Socket s = new Socket(host, port);
@@ -53,20 +44,11 @@ public class Host {
 		
             System.out.println("[System] Polaczono!");
 			System.out.println("[0] Wyjscie.");
-			//System.out.println("[1] Prosba o Dane glosnosci.");
-			//System.out.println("[2] Prosba o Dane obciazenia systemu. ");
-			//System.out.println("[3] Prosba o informacje o systemie. ");
-			//System.out.println("[4] Prosba o informacje o przyciskach. [NOT IMPLEMENTED]");
-			//System.out.println("[10] [value] Ustawienie glosnosci 0-1023.");
-			//System.out.println("[11] Przycisk Funkcji. [NOT IMPLEMENTED]");
-			System.out.println("[64] Prosba o odczytanie glosnosci.");
-			//System.out.println("[74] Wyslanie informacji o systemie.");
-			//System.out.println("[75] Wyslanie glosnosci.");
-			//System.out.println("[76] Wyslanie obciazenia systemu.");
-			System.out.println("[77] [r g b] Wyslanie koloru.");
-			//System.out.println("[78] Wyslanie informacji o przyciskach. [NOT IMPLEMENTED]");
-			System.out.println("[128] [message] Ping");
-			//System.out.println("[128] Pong");
+			//System.out.println("[64] Prosba o odczytanie glosnosci.");
+			System.out.println("buttons");
+			System.out.println("send:");
+			System.out.println("\t[77] [r g b] Wyslanie koloru.");
+			System.out.println("\t[128] [message] Ping");
 			
             String line;
 			while (true) {
@@ -127,6 +109,13 @@ public class Host {
 						}
 					}
 				}
+				
+				if (command[0].equals("buttons")) {
+					ButtonsConfigure bf = new ButtonsConfigure(listener.getButtons());
+					bf.run();
+					listener.setButtons(bf.getButtons());
+				}
+				
 				// W przypadku zakonczenie procesu nasluchujacego, zakoncz proces w tle
 				if (!listener.isRunning()) {
 					thr_listen.stop();
@@ -143,7 +132,6 @@ public class Host {
 			return;
         }
     }
-	
 	
 }
 
@@ -169,7 +157,7 @@ class Listener implements Runnable {
 		}
 		
 		//DEBUG
-		buttons[1].setCommand("notepad.exe");
+		loadButtons();
 	}
 	
 	void terminate() {
@@ -179,17 +167,22 @@ class Listener implements Runnable {
 	public boolean isRunning() {
 		return this.isRunning;
 	}
+	public Button[] getButtons() {
+		return this.buttons;
+	}
+	public void setButtons(Button [] buttons) {
+		this.buttons = buttons;
+	}
 	
 	private void loadButtons(){
 		try {
 			File myObj = new File("buttons.txt");
 			Scanner myReader = new Scanner(myObj);
-			int i = 0;
-			while (myReader.hasNextLine()) {
+			for (int i=0; i<8; i++) {
 				String description = myReader.nextLine();
 				buttons[i].setDescription(description);
 				String command = myReader.nextLine();
-				buttons[i].setCommand(description);
+				buttons[i].setCommand(command);
 				String emptyLine = myReader.nextLine();
 			}
 			myReader.close();
@@ -215,6 +208,7 @@ class Listener implements Runnable {
 			e.printStackTrace();
 		}
 	}
+	
 	@Override
 	public void run() {	
 		try {
@@ -227,6 +221,11 @@ class Listener implements Runnable {
 				System.out.println( "Packed received: " + utils.readableByte(packet[0]) );
 				
 				switch( utils.readableByte(packet[0]) ) {
+					case 0:
+					{
+						isRunning = false;
+						System.out.println("UART is busy.");
+					}
 					case 1:
 					{
 						System.out.println("\t[Prosba o wyslanie glosnosci]" );
@@ -358,7 +357,10 @@ class Listener implements Runnable {
 			}	
 		}
 		catch (Exception er) {
-			System.err.println( "[2] Napotkano problem: " + er.getMessage() );
+			if (!er.getMessage().equals("Connection reset")
+			&&  !er.getMessage().equals("Socket closed")){
+				System.err.println( "[2] Error occurred: " + er.getMessage() );
+			}
 			this.isRunning = false;
 			saveButtons();
 			return;
@@ -366,7 +368,6 @@ class Listener implements Runnable {
 		saveButtons();
 	}
 }
-
 
 class Button {
 	private String description;
@@ -378,10 +379,10 @@ class Button {
 	}
 	
 	public void setDescription(String desc) {
-		if (description.length() > 14){
-			description = description.substring(0, 13);
+		if (desc.length() > 14){
+			desc = desc.substring(0, 13);
 		}
-		this.description = description;
+		this.description = desc;
 	}
 	
 	public void setCommand(String command) {
@@ -389,10 +390,10 @@ class Button {
 	}
 	
 	public void set(String desc, String command) {
-		if (description.length() > 14){
-			description = description.substring(0, 13);
+		if (desc.length() > 14){
+			desc = desc.substring(0, 13);
 		}
-		this.description = description;
+		this.description = desc;
 		this.command = command;
 	}
 	
@@ -404,3 +405,95 @@ class Button {
 	}
 	
 }
+
+class ButtonsConfigure {
+	
+	Button [] buttons;
+	Scanner sc;
+	ButtonsConfigure(Button [] buttons) {
+        this.sc = new Scanner(System.in);
+		this.buttons = buttons;
+	}
+	
+	public void run() {
+		try {
+			System.out.println("Konfiguracja funkcji przyciskow:");
+			System.out.println("0. Wyjscie");
+			for (int i=1; i<9; i++) {
+				System.out.println(i + ". " + buttons[i-1].getDescription());
+			}
+			System.out.println("Wybierz przycisk do konfiguracji");
+			
+			while (true) {
+				System.out.print(">> ");
+				String line = sc.nextLine();
+				int value = Integer.parseInt(line);
+				if (value >= 1 && value <= 8) {
+					selectButton(value-1);
+				}
+				else if (value == 0) {
+					break;
+				}
+				else {
+					System.out.println("Invalid command.");
+				}
+				
+			}
+		}
+		catch (Exception ex) {
+			return;
+		}
+	}
+	
+	private void selectButton(int i) {
+		try {
+			System.out.println("Wybrano przycisk " + i);
+			System.out.println("0. Powrot");
+			System.out.println("1. Opis: " + buttons[i].getDescription());
+			System.out.println("2. Funkcja: " + buttons[i].getCommand());
+			System.out.println("Co chcesz zmienic?");
+			System.out.print(">>> ");
+			String line = sc.nextLine();
+			int value = Integer.parseInt(line);
+			while (true) {
+				if (value == 0) {
+					break;
+				}
+				else if (value == 1) {
+					System.out.println("Podaj opis (do 14 znakow).");
+					System.out.print(">>>> ");
+					line = sc.nextLine();
+					buttons[i].setDescription(line);
+					System.out.println("Zmieniono opis przycisku " + i + ".");
+					break;
+				}
+				else if (value == 2) {
+					System.out.println("Podaj komende.");
+					System.out.print(">>> ");
+					line = sc.nextLine();
+					buttons[i].setCommand(line);
+					System.out.println("Zmieniono komende przycisku " + i + ".");
+					break;
+				}
+			}
+			
+		}
+		catch (Exception ex) {
+			return;
+		}
+	}
+
+	public Button[] getButtons() {
+		return this.buttons;
+	}
+}
+
+
+
+
+
+
+
+
+
+

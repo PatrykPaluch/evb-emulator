@@ -6,7 +6,7 @@ import A.Utils;
 /**
  * Panel EvB
  * Autor: Konrad Paluch
- * Data: 2020 06 06
+ * Data: 2020 06 08
  * Na potrzeby projektu z przedmiotu Systemy Wbudowane
  * Grupa lab06 PK 2020
  */
@@ -22,9 +22,10 @@ public class Panel {
 		
         em.setProgram(new EvBProgram() {
 
-			String textScreenUpper = " Potencjometr:  ";
+			String textScreenUpper = "                ";
 			String textScreenLower = "                ";
 			int potentiometer = -1;
+			long itr = 1;
 		
             @Override
             public String getAuthor() {
@@ -38,40 +39,33 @@ public class Panel {
 				textScreenLower = "" + getPotentiometer();
                 blik = false;
 				
-				byte[] packet = emptyPacket( (byte)1 );
+				byte[] packet = utils.emptyPacket( (byte)1 );
 				write(packet, 0, 8);
 				
-				packet = emptyPacket( (byte)2 );
+				packet = utils.emptyPacket( (byte)3 );
 				write(packet, 0, 8);
-				
-				packet = emptyPacket( (byte)3 );
-				write(packet, 0, 8);
-				
-				// Get information of all 8 buttons.
-				/*
-				for (int i=0; i<8; i++) {
-					packet = emptyPacket( (byte)4 );
-					packet[1] = (byte)(i);
-					write(packet, 0, 8);
-				}
-				*/
             }
 
             @Override
             public void loop() {
-                // Kopiowanie stanu przycisków na ledy
-                int st = getPinSwitch();
-                pinLED(st);
 				
+				// Co 10 sekund wyświetl temperature
+				if (itr%100 == 0) {
+					byte [] packet = utils.emptyPacket( (byte)2 );
+					write(packet, 0, 8);
+				}
 				// Obsługa przycisków
 				for (int i=0; i<8; i++) {
-					
 					if (justpressed[i] != getPinSwitch(i) ) {
 						justpressed[i] = getPinSwitch(i);
 						
 						if( getPinSwitch(i) ) {
+							byte[] packet = utils.emptyPacket( (byte)11 );
+							packet[1] = (byte)(i);
+							write(packet, 0, 8);
 							
-							byte[] packet = emptyPacket( (byte)11 );
+							// Po wcisnieciu wyswietla opis przycisku z informacjami otrzymanymi od hosta
+							packet = utils.emptyPacket( (byte)4 );
 							packet[1] = (byte)(i);
 							write(packet, 0, 8);
 						}
@@ -81,7 +75,7 @@ public class Panel {
 				// Update potencjometr
 				if(getPotentiometer() != potentiometer) {
 					potentiometer = getPotentiometer();
-					byte[] packet = emptyPacket( (byte)10 );
+					byte[] packet = utils.emptyPacket( (byte)10 );
 					byte[] value = utils.intToBytes(getPotentiometer());
 					for (int i=2; i<4; i++) {
 						packet[i-1] = value[i];
@@ -89,7 +83,7 @@ public class Panel {
 					write(packet, 0, 8);
 					
 					// Zazadaj danych o glosnosci
-					packet = emptyPacket( (byte)1 );
+					packet = utils.emptyPacket( (byte)1 );
 					write(packet, 0, 8);
 				}
 
@@ -118,7 +112,7 @@ public class Panel {
 					switch((int)type&0xFF) {
 						case 1:
 						{
-							byte[] packet = emptyPacket( (byte)75 );
+							byte[] packet = utils.emptyPacket( (byte)75 );
 							byte [] value = BigInteger.valueOf( getPotentiometer() ).toByteArray();
 							for (int i = 0; i < value.length; i++) {
 								packet[i+1] = value[i];
@@ -129,7 +123,7 @@ public class Panel {
 						}
 						case 64:
 						{
-							byte[] packet = emptyPacket( (byte)10 );
+							byte[] packet = utils.emptyPacket( (byte)10 );
 							byte [] value = BigInteger.valueOf( getPotentiometer() ).toByteArray();
 							for (int i = 0; i < value.length; i++) {
 								packet[i+1] = value[i];
@@ -156,13 +150,18 @@ public class Panel {
 						{
 							byte [] arr = { data[1], data[2], data[3], data[4] };
 							int value = utils.byteToInt( arr );
-							log("Glosnosc: " + value);
-							textScreenUpper = "   Glosnosc:    ";
-							String tmp = "";
-							for(int i=0; i<8-String.valueOf(value).length()/2; i++){
-								tmp = tmp + " ";
+							textScreenUpper = utils.centerText("Glosnosc", 16);
+							textScreenLower = utils.centerText(String.valueOf(value), 16);
+							
+							for (int i=0; i<8; i++) {
+								if (i < value*0.08) {
+									pinLED(i, true);
+								}
+								else {
+									pinLED(i, false);
+								}
 							}
-							textScreenLower = tmp + value + tmp;
+							
 							break;
 						}
 						case 76:
@@ -174,8 +173,8 @@ public class Panel {
 							int int_ram = utils.byteToInt(ram);
 							
 							byte tmp = data[6];
-							log("Memory Usage: " + int_ram + " KB" );
-							log("Current CPU Temperature: " + utils.readableByte(tmp) + " \u00B0C");
+							textScreenUpper = utils.centerText("Memory " + (int_ram/1024) + "MB", 16);
+							textScreenLower = utils.centerText("CPU " + utils.readableByte(tmp) + "\u00B0C", 16);
 							break;
 						}
 						case 77:
@@ -187,23 +186,21 @@ public class Panel {
 						}
 						case 78:
 						{
-							String str = new String(data);
-							str = str.substring(2, str.length());
-							log("Button " + data[1] + ": " + str);
+							String str1 = new String(data);
+							str1 = str1.substring(2, str1.length()).replace("\0", "");
+							textScreenUpper = utils.centerText("Button " + utils.readableByte(data[1]), 16);
 							
 							data = new byte[8];
 							mlen = read(data, 0, 8);
-							showpacket(data);
-							str = new String(data);
-							log(str);
-							
+							String str2 = new String(data).replace("\0", "");
+							textScreenLower = utils.centerText(str1 + str2, 16);
 							break;
 						}
 						case 128:
 						{
 							String str = new String(data);
 							log("ping: '" + str.substring(1, str.length()).replace("\0", "") + "'");
-							byte[] packet = emptyPacket( (byte)129 );
+							byte[] packet = utils.emptyPacket( (byte)129 );
 							for (int i = 1; i < 8; i++) {
 								packet[i] = data[i];
 							}
@@ -223,22 +220,12 @@ public class Panel {
 						}
 					}	
 				}
-                
-				delay(250);
+				delay(100);
+				itr++;
             }
         });
-
     }
 	
-	private static byte[] emptyPacket(){
-		byte[] packet = {0,0,0,0,0,0,0,0};
-		return packet;
-	}
-	
-	private static byte[] emptyPacket(byte type){
-		byte[] packet = { type,0,0,0,0,0,0,0};
-		return packet;
-	}
 	private static void showpacket(byte [] bytes) {
 		for (int i = 0; i < 8; i++) {
 			System.err.print( utils.readableByte(bytes[i]) + " ");

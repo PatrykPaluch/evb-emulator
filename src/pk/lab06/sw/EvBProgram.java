@@ -156,7 +156,7 @@ public abstract class EvBProgram {
      * @return true if button is pressed, false otherwise
      */
     public boolean getPinSwitch(int pin){
-        return parent.getPanelLed(pin);
+        return parent.getPanelSwitch(pin);
     }
 
     /**
