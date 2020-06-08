@@ -1,16 +1,16 @@
+package pk.lab06.sw.program;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.util.Scanner;
-import java.math.BigInteger;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.FileNotFoundException;
-import java.util.Scanner;
 
 /**
- * Host
+ * pk.lab06.sw.program.Host
  * Autor: Konrad Paluch
  * Data: 2020 06 08
  * Na potrzeby projektu z przedmiotu Systemy Wbudowane
@@ -39,7 +39,7 @@ public class Host {
             is = s.getInputStream();
             os = s.getOutputStream();
 			listener = new Listener(is, os);
-			thr_listen = new Thread(listener, "Listener-Thread");
+			thr_listen = new Thread(listener, "pk.lab06.sw.program.Listener-Thread");
 			thr_listen.start();
 		
             System.out.println("[System] Polaczono!");
@@ -310,7 +310,7 @@ class Listener implements Runnable {
 							int button_number = utils.byteToInt( (byte)(0), packet[1] );
 							System.out.println("Wcisnieto przycisk: " + button_number );
 							if (buttons[button_number].getCommand().equals("")) break;
-							// Host po otrzymaniu powinien wykonać przypisaną do danego przycisku funkcję. Host sam ustala przypisane funkcje.
+							// pk.lab06.sw.program.Host po otrzymaniu powinien wykonać przypisaną do danego przycisku funkcję. pk.lab06.sw.program.Host sam ustala przypisane funkcje.
 							String [] cmd = {"/bin/bash", "-c", buttons[button_number].getCommand()};
 							Process process = runtime.exec(cmd, null);
 							

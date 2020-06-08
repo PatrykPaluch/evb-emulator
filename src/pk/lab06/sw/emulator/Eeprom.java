@@ -1,4 +1,4 @@
-package pk.lab06.sw;
+package pk.lab06.sw.emulator;
 
 import java.util.Arrays;
 

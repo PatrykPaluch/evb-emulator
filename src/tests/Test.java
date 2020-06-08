@@ -1,7 +1,7 @@
 package tests;
 
-import pk.lab06.sw.EvBEmulator;
-import pk.lab06.sw.EvBProgram;
+import pk.lab06.sw.emulator.EvBEmulator;
+import pk.lab06.sw.emulator.EvBProgram;
 
 /**
  * tests.Test "Emulatora" EvB

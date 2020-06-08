@@ -1,6 +1,4 @@
-package pk.lab06.sw;
-
-import java.io.IOException;
+package pk.lab06.sw.emulator;
 
 /**
  *   <p>
@@ -19,7 +17,7 @@ import java.io.IOException;
  */
 public abstract class EvBProgram {
     /**
-     * Determinate if program is running. Set it to False to stop program between {@link #loop()} calls.
+     * Determinate if pk.lab06.sw.program is running. Set it to False to stop pk.lab06.sw.program between {@link #loop()} calls.
      */
     protected boolean running;
     private EvBEmulator parent;
@@ -332,7 +330,7 @@ public abstract class EvBProgram {
     }
 
     /**
-     * @return Emulator object that running this program
+     * @return Emulator object that running this pk.lab06.sw.program
      */
     public final EvBEmulator getParent(){
         return parent;

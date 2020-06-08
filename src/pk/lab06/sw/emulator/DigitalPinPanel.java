@@ -1,4 +1,4 @@
-package pk.lab06.sw;
+package pk.lab06.sw.emulator;
 
 public class DigitalPinPanel {
     private byte value;

@@ -1,4 +1,4 @@
-package pk.lab06.sw;
+package pk.lab06.sw.emulator;
 
 /**
  * Signals that an {@link EvBProgram} exception has occurred.

@@ -1,32 +1,49 @@
-import java.util.ArrayList;
-import java.util.List;
+package pk.lab06.sw.program;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.Socket;
-import java.util.Scanner;
 import java.math.BigInteger;
 
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Control;
 import javax.sound.sampled.FloatControl;
 import javax.sound.sampled.Line;
-import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.Mixer;
-import javax.sound.sampled.Port;
 import javax.sound.sampled.Control.Type;
 import javax.sound.sampled.CompoundControl;
 
 public class Utils {
-	
-	ControlTest audio;
-	public Utils() {
-		audio = new ControlTest();
-	}
-	
-	public void setVolume(int volume) {
-		audio.setVolume(volume);
+
+	private Utils() { }
+
+
+	public static boolean setVolume(int value) {
+		try {
+
+			Mixer.Info[] mixerInfos = AudioSystem.getMixerInfo();
+			for (int i = 0; i < mixerInfos.length; i++)
+			{
+				Mixer mixer = AudioSystem.getMixer(mixerInfos[i]);
+
+				Line.Info[] targetLineInfos = mixer.getTargetLineInfo();
+
+				for (int j = 0; j < targetLineInfos.length; j++) {
+					Line line = AudioSystem.getLine(targetLineInfos[j]);
+					line.open();
+					FloatControl control = (FloatControl) line.getControl(FloatControl.Type.VOLUME);
+
+					control.setValue( value );
+					line.close();
+				}
+
+			}
+
+		}
+		catch (Exception e) {
+			return false;
+		}
+		return true;
 	}
 	
 	public static byte[] emptyPacket(){
@@ -119,40 +136,6 @@ public class Utils {
 		return null;
 	}
 }
-
-class ControlTest {
-
-   public static boolean setVolume(int value) {
-
-		try {
-			
-			Mixer.Info[] mixerInfos = AudioSystem.getMixerInfo();
-			for (int i = 0; i < mixerInfos.length; i++)
-			{
-				Mixer mixer = AudioSystem.getMixer(mixerInfos[i]);
-
-				Line.Info[] targetLineInfos = mixer.getTargetLineInfo();
-
-				for (int j = 0; j < targetLineInfos.length; j++) {
-					Line line = AudioSystem.getLine(targetLineInfos[j]);
-					line.open();
-					FloatControl control = (FloatControl) line.getControl(FloatControl.Type.VOLUME);
-
-					control.setValue( value );
-					line.close();
-				}
-
-			}
-		  
-		}
-		catch (Exception e) {
-			return false;
-		}
-		return true;
-    }
-
-}
-
 
 
 

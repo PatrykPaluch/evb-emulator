@@ -1,4 +1,4 @@
-package pk.lab06.sw;
+package pk.lab06.sw.emulator;
 
 import javax.swing.*;
 import javax.swing.text.DefaultCaret;
@@ -245,7 +245,7 @@ public class EvBEmulator {
             setRunning(false);
         }catch (InterruptedException er){
             er.printStackTrace();
-            log("[SYSTEM] Stoping program ERROR! " + er.getMessage());
+            log("[SYSTEM] Stoping pk.lab06.sw.program ERROR! " + er.getMessage());
         }
     }
 
@@ -264,7 +264,7 @@ public class EvBEmulator {
 
     public void setProgram(EvBProgram program) {
         synchronized (lock) {
-            if (isRunning()) throw new EvBEmulatorException("Emulator is running. Can't change program.");
+            if (isRunning()) throw new EvBEmulatorException("Emulator is running. Can't change pk.lab06.sw.program.");
             this.program = program;
             this.program.setParent(this);
         }
