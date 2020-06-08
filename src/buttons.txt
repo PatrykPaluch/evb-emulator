@@ -1,0 +1,24 @@
+Text Editor
+notepad.exe
+
+show path
+dir
+
+show data
+data
+
+empty
+empty
+
+empty
+empty
+
+empty
+empty
+
+empty
+empty
+
+empty
+empty
+
