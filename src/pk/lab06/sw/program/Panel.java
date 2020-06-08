@@ -191,7 +191,7 @@ public class Panel extends EvBProgram {
 				{
 					String str1 = new String(data);
 					str1 = str1.substring(2, str1.length()).replace("\0", "");
-					textScreenUpper = Utils.centerText("pk.lab06.sw.program.Button " + Utils.readableByte(data[1]), 16);
+					textScreenUpper = Utils.centerText("pk.lab06.sw.host.Button " + Utils.readableByte(data[1]), 16);
 
 					data = new byte[8];
 					mlen = read(data, 0, 8);

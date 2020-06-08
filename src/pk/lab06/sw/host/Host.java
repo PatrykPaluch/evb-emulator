@@ -1,16 +1,14 @@
-package pk.lab06.sw.program;
+package pk.lab06.sw.host;
 
-import java.io.IOException;
+import pk.lab06.sw.program.Utils;
+
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.util.Scanner;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.FileNotFoundException;
 
 /**
- * pk.lab06.sw.program.Host
+ * pk.lab06.sw.host.Host
  * Autor: Konrad Paluch
  * Data: 2020 06 08
  * Na potrzeby projektu z przedmiotu Systemy Wbudowane
@@ -38,7 +36,7 @@ public class Host {
             is = s.getInputStream();
             os = s.getOutputStream();
 			listener = new Listener(is, os);
-			thr_listen = new Thread(listener, "pk.lab06.sw.program.Listener-Thread");
+			thr_listen = new Thread(listener, "pk.lab06.sw.host.Listener-Thread");
 			thr_listen.start();
 		
             System.out.println("[System] Polaczono!");

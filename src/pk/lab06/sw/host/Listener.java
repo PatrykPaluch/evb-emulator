@@ -1,9 +1,11 @@
-package pk.lab06.sw.program;
+package pk.lab06.sw.host;
+
+import pk.lab06.sw.program.Utils;
 
 import java.io.*;
 import java.util.Scanner;
 
-class Listener implements Runnable {
+public class Listener implements Runnable {
     InputStream is;
     OutputStream os;
     boolean isRunning;
@@ -176,7 +178,7 @@ class Listener implements Runnable {
                             int button_number = Utils.byteToInt( (byte)(0), packet[1] );
                             System.out.println("Wcisnieto przycisk: " + button_number );
                             if (buttons[button_number].getCommand().equals("")) break;
-                            // pk.lab06.sw.program.Host po otrzymaniu powinien wykonać przypisaną do danego przycisku funkcję. pk.lab06.sw.program.Host sam ustala przypisane funkcje.
+                            // pk.lab06.sw.host.Host po otrzymaniu powinien wykonać przypisaną do danego przycisku funkcję. pk.lab06.sw.host.Host sam ustala przypisane funkcje.
                             String [] cmd = {"/bin/bash", "-c", buttons[button_number].getCommand()};
                             Process process = runtime.exec(cmd, null);
 

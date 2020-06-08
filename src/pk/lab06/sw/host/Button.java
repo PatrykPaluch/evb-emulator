@@ -1,7 +1,7 @@
-package pk.lab06.sw.program;
+package pk.lab06.sw.host;
 
 
-class Button {
+public class Button {
     private String description;
     private String command;
 

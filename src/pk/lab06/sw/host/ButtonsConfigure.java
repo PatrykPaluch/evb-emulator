@@ -1,9 +1,9 @@
-package pk.lab06.sw.program;
+package pk.lab06.sw.host;
 
 
 import java.util.Scanner;
 
-class ButtonsConfigure {
+public class ButtonsConfigure {
 
     Button [] buttons;
     Scanner sc;
