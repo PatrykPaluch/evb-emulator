@@ -8,7 +8,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.FileNotFoundException;
 import java.util.Scanner;
-import A.Utils;
+
 /**
  * Host
  * Autor: Konrad Paluch
@@ -301,6 +301,7 @@ class Listener implements Runnable {
 						this.glosnosc = value / 1023.0;
 						System.out.println("\tcontent: '" + value + "'" );
 						System.out.println("Ustawiono glosnosc na: " + (int)(this.glosnosc*100) + "%" );
+						utils.setVolume((int)(this.glosnosc*100));
 						break;
 					}
 					case 11:

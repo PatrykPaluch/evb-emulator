@@ -1,4 +1,5 @@
-package A;
+import java.util.ArrayList;
+import java.util.List;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -7,7 +8,27 @@ import java.net.Socket;
 import java.util.Scanner;
 import java.math.BigInteger;
 
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.Control;
+import javax.sound.sampled.FloatControl;
+import javax.sound.sampled.Line;
+import javax.sound.sampled.LineUnavailableException;
+import javax.sound.sampled.Mixer;
+import javax.sound.sampled.Port;
+import javax.sound.sampled.Control.Type;
+import javax.sound.sampled.CompoundControl;
+
 public class Utils {
+	
+	ControlTest audio;
+	public Utils() {
+		audio = new ControlTest();
+	}
+	
+	public void setVolume(int volume) {
+		audio.setVolume(volume);
+	}
+	
 	public static byte[] emptyPacket(){
 		byte[] packet = {0,0,0,0,0,0,0,0};
 		return packet;
@@ -55,6 +76,7 @@ public class Utils {
 	public static int readableByte(byte b) {
 		return ((int)b&0xFF);
 	}
+	
 	public static byte[] intToBytes(int value) {
 		byte [] bytes = BigInteger.valueOf( value ).toByteArray();
 		byte [] ret;
@@ -73,6 +95,7 @@ public class Utils {
 		else ret = bytes;
 		return ret;
 	}
+	
 	public static String centerText(String text, int width) {
 		
 		String tmp = "";
@@ -82,4 +105,54 @@ public class Utils {
 		String ret = tmp + text + tmp;
 		return ret;
 	}
+	
+	private static Control findControl(Type type, Control... controls) {
+		if (controls == null || controls.length == 0) return null;
+		for (Control control : controls) {
+			if (control.getType().equals(type)) return control;
+			if (control instanceof CompoundControl) {
+				CompoundControl compoundControl = (CompoundControl) control;
+				Control member = findControl(type, compoundControl.getMemberControls());
+				if (member != null) return member;
+			}
+		}
+		return null;
+	}
 }
+
+class ControlTest {
+
+   public static boolean setVolume(int value) {
+
+		try {
+			
+			Mixer.Info[] mixerInfos = AudioSystem.getMixerInfo();
+			for (int i = 0; i < mixerInfos.length; i++)
+			{
+				Mixer mixer = AudioSystem.getMixer(mixerInfos[i]);
+
+				Line.Info[] targetLineInfos = mixer.getTargetLineInfo();
+
+				for (int j = 0; j < targetLineInfos.length; j++) {
+					Line line = AudioSystem.getLine(targetLineInfos[j]);
+					line.open();
+					FloatControl control = (FloatControl) line.getControl(FloatControl.Type.VOLUME);
+
+					control.setValue( value );
+					line.close();
+				}
+
+			}
+		  
+		}
+		catch (Exception e) {
+			return false;
+		}
+		return true;
+    }
+
+}
+
+
+
+

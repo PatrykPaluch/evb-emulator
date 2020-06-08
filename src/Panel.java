@@ -2,7 +2,6 @@ import pk.lab06.sw.EvBEmulator;
 import pk.lab06.sw.EvBProgram;
 import java.math.BigInteger;
 
-import A.Utils;
 /**
  * Panel EvB
  * Autor: Konrad Paluch
