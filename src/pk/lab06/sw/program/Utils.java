@@ -18,7 +18,7 @@ import javax.sound.sampled.CompoundControl;
 
 public class Utils {
 	
-	boolean b;
+	private static boolean b = true;
 	
 	public static void setVolume(int volume) {
 		try {
@@ -145,11 +145,11 @@ public class Utils {
 		return i;
 	}
 	
-	public void showLogs(boolean b) {
-		this.b = b;
+	public static void showLogs(boolean b) {
+		Utils.b = b;
 	}
 	
-	public void log(String str) {
+	public static void log(String str) {
 		if(b) {
 			System.out.println(str);
 		}

@@ -14,7 +14,6 @@ public class Listener implements Runnable {
 	InputStream is;
 	OutputStream os;
 	boolean isRunning;
-	Utils utils;
 	double glosnosc; // TODO
 	Runtime runtime;
 	Button [] buttons;
@@ -24,7 +23,7 @@ public class Listener implements Runnable {
 		this.is = is;
 		this.os = os;
 		this.isRunning = true;
-		this.Utils.showLogs(false);
+		Utils.showLogs(false);
 		this.glosnosc = 75;
 		this.runtime = Runtime.getRuntime();
 		this.buttons = new Button[8];
