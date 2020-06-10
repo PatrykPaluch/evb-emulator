@@ -2,6 +2,9 @@ package pk.lab06.sw.host;
 
 import pk.lab06.sw.program.Utils;
 
+import java.awt.color.ColorSpace;
+import java.awt.color.ICC_ColorSpace;
+import java.awt.color.ICC_ProfileRGB;
 import java.io.*;
 import java.util.Scanner;
 import java.awt.Toolkit;
@@ -18,6 +21,7 @@ public class Listener implements Runnable {
 	Runtime runtime;
 	Button [] buttons;
 	long r1, g1, b1;
+	private static double lasfFrame = 0;
 	
 	public Listener(InputStream is, OutputStream os) {
 		this.is = is;
@@ -106,9 +110,7 @@ public class Listener implements Runnable {
 						// send response
 						byte [] outgoing_packet = Utils.emptyPacket((byte)(75));
 						byte [] value = Utils.intToBytes((int)(this.glosnosc*100));
-						for (int i=0; i<value.length; i++) {
-							outgoing_packet[i+1] = value[i];
-						}
+						System.arraycopy(value, 0, outgoing_packet, 1, value.length);
 						Utils.send(outgoing_packet, os);
 						break;
 					}
@@ -121,10 +123,8 @@ public class Listener implements Runnable {
 						Utils.log("\t[allocatedMemory] " + allocatedMemory);
 						byte [] outgoing_packet = Utils.emptyPacket((byte)(76));
 						byte [] RAM = Utils.intToBytes( (int)(allocatedMemory) );
-						
-						for (int i = 0; i < RAM.length; i++) {
-							outgoing_packet[i+1] = RAM[i];
-						}
+
+						System.arraycopy(RAM, 0, outgoing_packet, 1, RAM.length);
 						outgoing_packet[6] = (byte)(60); // Brak łatwo dostepnego czujnika w javie, więc wartość testowo ustawiona na "sztywno".
 						Utils.send(outgoing_packet, os);
 						break;
@@ -138,9 +138,7 @@ public class Listener implements Runnable {
 						Utils.log("\t[maxMemory] " + maxMemory);
 						byte [] outgoing_packet = Utils.emptyPacket((byte)(74));
 						byte [] RAM = Utils.intToBytes( (int)(maxMemory) );
-						for (int i = 0; i < RAM.length; i++) {
-							outgoing_packet[i+1] = RAM[i];
-						}
+						System.arraycopy(RAM, 0, outgoing_packet, 1, RAM.length);
 						outgoing_packet[6] = (byte)(85);
 						Utils.send(outgoing_packet, os);
 						break;
@@ -211,14 +209,12 @@ public class Listener implements Runnable {
 					}
 					case 128:
 					{
-						
+
 						// send response
 						String str = new String(packet);
 						Utils.log("\tcontent: '" + str.substring(1, str.length()).replace("\0", "") + "'");
 						byte[] outgoing_packet = Utils.emptyPacket( (byte)129 );
-						for (int i = 1; i < 8; i++) {
-							outgoing_packet[i] = packet[i];
-						}
+						System.arraycopy(packet, 1, outgoing_packet, 1, 7);
 						Utils.send(outgoing_packet, os);
 						break;
 					}
@@ -229,34 +225,39 @@ public class Listener implements Runnable {
 						break;
 					}
 				}
-				
-				BufferedImage image = new Robot().createScreenCapture(new Rectangle(Toolkit.getDefaultToolkit().getScreenSize()));
-				
-				long r = 0, g = 0, b = 0;
-				
-				for (int x = 0; x < image.getWidth(); x++) {
-					for (int y = 0; y < image.getHeight(); y++) {
-						Color pixel = new Color(image.getRGB(x, y));
-						r += pixel.getRed();
-						g += pixel.getGreen();
-						b += pixel.getBlue();
+
+
+
+				if((System.currentTimeMillis()-lasfFrame)>2000){
+					BufferedImage image = new Robot().createScreenCapture(new Rectangle(Toolkit.getDefaultToolkit().getScreenSize()));
+					long r = 0, g = 0, b = 0;
+
+					for (int x = 0; x < image.getWidth(); x++) {
+						for (int y = 0; y < image.getHeight(); y++) {
+							Color pixel = new Color(image.getRGB(x, y));
+							r += pixel.getRed();
+							g += pixel.getGreen();
+							b += pixel.getBlue();
+						}
 					}
+					r = r / (image.getWidth()*image.getHeight());
+					g = g / (image.getWidth()*image.getHeight());
+					b = b / (image.getWidth()*image.getHeight());
+
+
+					if (Utils.colorDifference(r, g, b, r1, g1, b1) > 30) {
+						byte[] outgoing_packet = Utils.emptyPacket((byte) 77);
+						outgoing_packet[1] = (byte) r;
+						outgoing_packet[2] = (byte) g;
+						outgoing_packet[3] = (byte) b;
+						r1 = r;
+						g1 = g;
+						b1 = b;
+						Utils.send(outgoing_packet, os);
+					}
+					lasfFrame = System.currentTimeMillis();
 				}
-				r = r / (image.getWidth()*image.getHeight());
-				g = g / (image.getWidth()*image.getHeight());
-				b = b / (image.getWidth()*image.getHeight());
-				
-				if (Utils.colorDifference(r, g, b, r1, g1, b1) > 30) {
-					byte [] outgoing_packet = Utils.emptyPacket((byte)77);
-					outgoing_packet[1] = (byte)r;
-					outgoing_packet[2] = (byte)g;
-					outgoing_packet[3] = (byte)b;
-					r1 = r;
-					g1 = g;
-					b1 = b;
-					Utils.send(outgoing_packet, os);
-				}
-			}	
+			}
 		}
 		catch (Exception er) {
 			if (!er.getMessage().equals("Connection reset")
