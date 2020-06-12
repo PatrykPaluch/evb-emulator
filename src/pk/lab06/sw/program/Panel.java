@@ -4,6 +4,22 @@ import pk.lab06.sw.emulator.EvBEmulator;
 import pk.lab06.sw.emulator.EvBProgram;
 import java.math.BigInteger;
 
+import static pk.lab06.sw.program.Utils.PACKAGE_PANEL_ASK_FOR_VOLUME;
+import static pk.lab06.sw.program.Utils.PACKAGE_PANEL_ASK_FOR_SYSTEM_USAGE;
+import static pk.lab06.sw.program.Utils.PACKAGE_PANEL_ASK_FOR_SYSTEM_INFO;
+import static pk.lab06.sw.program.Utils.PACKAGE_PANEL_ASK_FOR_BUTTONS;
+import static pk.lab06.sw.program.Utils.PACKAGE_PANEL_SET_VOLUME;
+import static pk.lab06.sw.program.Utils.PACKAGE_PANEL_USE_BUTTON;
+
+import static pk.lab06.sw.program.Utils.PACKAGE_HOST_ASK_FOR_VOLUME;
+import static pk.lab06.sw.program.Utils.PACKAGE_HOST_SYSTEM_INFO;
+import static pk.lab06.sw.program.Utils.PACKAGE_HOST_SEND_VOLUME;
+import static pk.lab06.sw.program.Utils.PACKAGE_HOST_SEND_SYSTEM_USAGE;
+import static pk.lab06.sw.program.Utils.PACKAGE_HOST_SEND_COLOR;
+import static pk.lab06.sw.program.Utils.PACKAGE_HOST_SEND_BUTTON_INFO;
+
+import static pk.lab06.sw.program.Utils.PACKAGE_PING;
+import static pk.lab06.sw.program.Utils.PACKAGE_PONG;
 
 /**
  * Panel EvB
@@ -13,7 +29,6 @@ import java.math.BigInteger;
  * Grupa lab06 PK 2020
  */
 public class Panel {
-	static Utils utils;
     public static void main(String[] args) {
         EvBEmulator em = new EvBEmulator();
 		boolean [] justpressed = new boolean[8];
@@ -30,7 +45,7 @@ public class Panel {
 		
             @Override
             public String getAuthor() {
-                return "Konrad Paluch";
+                return "Łączył: Konrad Paluch; Poprawki: Patryk Paluch";
             }
 
             boolean blik;
@@ -50,9 +65,9 @@ public class Panel {
             @Override
             public void loop() {
 				
-				// Co 10 sekund wyświetl temperature
-				if (itr%100 == 0) {
-					byte [] packet = Utils.emptyPacket( (byte)2 );
+				// Co 2 sekund wyświetl temperature
+				if (itr%20 == 0) {
+					byte [] packet = Utils.emptyPacket( (byte)PACKAGE_PANEL_ASK_FOR_SYSTEM_USAGE );
 					write(packet, 0, 8);
 				}
 				// Obsługa przycisków
@@ -92,7 +107,6 @@ public class Panel {
                 setScreenText(0, textScreenUpper);
                 setScreenText(1, textScreenLower);
 
-                // Jeżeli UART jest podłączony to spowoduje zatrzymanie do czasu otrzymania danych
 				
                 byte[] data = new byte[8];
                 int mlen = -1;
@@ -110,10 +124,10 @@ public class Panel {
 					
 					//System.out.println( "Packed received: " + Utils.readableByte(packet[0]) );
 					
-					switch((int)type&0xFF) {
-						case 1:
+					switch(type&0xFF) {
+						case PACKAGE_PANEL_ASK_FOR_VOLUME:
 						{
-							byte[] packet = Utils.emptyPacket( (byte)75 );
+							byte [] packet = Utils.emptyPacket( (byte)PACKAGE_HOST_SEND_VOLUME );
 							byte [] value = BigInteger.valueOf( getPotentiometer() ).toByteArray();
 							for (int i = 0; i < value.length; i++) {
 								packet[i+1] = value[i];
@@ -122,9 +136,9 @@ public class Panel {
 							write(packet, 0, 8);
 							break;
 						}
-						case 64:
+						case PACKAGE_HOST_ASK_FOR_VOLUME:
 						{
-							byte[] packet = Utils.emptyPacket( (byte)10 );
+							byte [] packet = Utils.emptyPacket( (byte)PACKAGE_PANEL_SET_VOLUME );
 							byte [] value = BigInteger.valueOf( getPotentiometer() ).toByteArray();
 							for (int i = 0; i < value.length; i++) {
 								packet[i+1] = value[i];
@@ -133,21 +147,21 @@ public class Panel {
 							write(packet, 0, 8);
 							break;
 						}
-						case 74:
+						case PACKAGE_HOST_SYSTEM_INFO:
 						{
 							byte [] ram = new byte[4];
-							for (int i = 1; i < 4; i++) {
+							for (int i = 1; i <= 4; i++) {
 								ram[i-1] = data[i];
 							}
 							int int_ram = Utils.byteToInt(ram);
 							
-							byte tmp = data[6];
+							int tmp = (data[5]&0xFF) + ((data[6]&0xFF)<<8);
 							
-							log("Max Memory: " + int_ram + " KB" );
-							log("Max CPU Temperature: " + Utils.readableByte(tmp)+ " \u00B0C" );
+							log("Max Memory: " + int_ram + " MB" );
+							log("Max CPU Temperature: " + tmp + " \u00B0C" );
 							break;
 						}
-						case 75:
+						case PACKAGE_HOST_SEND_VOLUME:
 						{
 							byte [] arr = { data[1], data[2], data[3], data[4] };
 							int value = Utils.byteToInt( arr );
@@ -165,27 +179,27 @@ public class Panel {
 							
 							break;
 						}
-						case 76:
+						case PACKAGE_HOST_SEND_SYSTEM_USAGE:
 						{
 							byte [] ram = new byte[4];
-							for (int i = 1; i < 4; i++) {
+							for (int i = 1; i <= 4; i++) {
 								ram[i-1] = data[i];
 							}
 							int int_ram = Utils.byteToInt(ram);
 							
-							byte tmp = data[6];
-							textScreenUpper = Utils.centerText("Memory " + (int_ram/1024) + "MB", 16);
-							textScreenLower = Utils.centerText("CPU " + Utils.readableByte(tmp) + "\u00B0C", 16);
+							int tmp = (data[5]&0xFF) + ((data[6]&0xFF)<<8);
+							textScreenUpper = Utils.centerText("Memory " + (int_ram) + "MB", 16);
+							textScreenLower = Utils.centerText("CPU " + tmp + "\u00B0C", 16);
 							break;
 						}
-						case 77:
+						case PACKAGE_HOST_SEND_COLOR:
 						{
 							pinRgbR(Utils.readableByte(data[1]));
 							pinRgbG(Utils.readableByte(data[2]));
 							pinRgbB(Utils.readableByte(data[3]));
 							break;
 						}
-						case 78:
+						case PACKAGE_HOST_SEND_BUTTON_INFO:
 						{
 							String str1 = new String(data);
 							str1 = str1.substring(2, str1.length()).replace("\0", "");
@@ -197,18 +211,18 @@ public class Panel {
 							textScreenLower = Utils.centerText(str1 + str2, 16);
 							break;
 						}
-						case 128:
+						case PACKAGE_PING:
 						{
 							String str = new String(data);
 							log("ping: '" + str.substring(1, str.length()).replace("\0", "") + "'");
-							byte[] packet = Utils.emptyPacket( (byte)129 );
+							byte[] packet = Utils.emptyPacket( (byte)PACKAGE_PONG );
 							for (int i = 1; i < 8; i++) {
 								packet[i] = data[i];
 							}
 							write(packet, 0, 8);
 							break;
 						}
-						case 129:
+						case PACKAGE_PONG:
 						{
 							String str = new String(data);
 							log("pong: '" + str.substring(1, str.length()) + "'");
@@ -216,7 +230,7 @@ public class Panel {
 						}
 						default:
 						{
-							log("[ERROR] Received unknown packet type (" + ((int)type&0xFF) + ").");
+							log("[ERROR] Received unknown packet type (" + (type&0xFF) + ").");
 							break;
 						}
 					}	

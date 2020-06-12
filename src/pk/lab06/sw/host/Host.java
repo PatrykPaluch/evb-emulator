@@ -86,7 +86,6 @@ public class Host {
         }
 		catch (Exception er) {
 			System.err.println( "[1] Napotkano problem: " + er.getMessage() );
-			return;
         }
     }
 }

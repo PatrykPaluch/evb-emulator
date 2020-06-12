@@ -1,9 +1,13 @@
 package pk.lab06.sw.program;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import com.sun.management.OperatingSystemMXBean;
+
+import java.io.*;
+import java.lang.management.ManagementFactory;
 import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Control;
@@ -11,62 +15,100 @@ import javax.sound.sampled.FloatControl;
 import javax.sound.sampled.Line;
 import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.Mixer;
-import javax.sound.sampled.Port;
 import javax.sound.sampled.Control.Type;
 import javax.sound.sampled.CompoundControl;
 
 
 public class Utils {
-	
+
+	public static final int PACKAGE_PANEL_ASK_FOR_VOLUME = 1;
+	public static final int PACKAGE_PANEL_ASK_FOR_SYSTEM_USAGE = 2;
+	public static final int PACKAGE_PANEL_ASK_FOR_SYSTEM_INFO = 3;
+	public static final int PACKAGE_PANEL_ASK_FOR_BUTTONS = 4;
+	public static final int PACKAGE_PANEL_SET_VOLUME = 10;
+	public static final int PACKAGE_PANEL_USE_BUTTON = 11;
+
+	public static final int PACKAGE_HOST_ASK_FOR_VOLUME = 64;
+	public static final int PACKAGE_HOST_SYSTEM_INFO = 74;
+	public static final int PACKAGE_HOST_SEND_VOLUME = 75;
+	public static final int PACKAGE_HOST_SEND_SYSTEM_USAGE = 76;
+	public static final int PACKAGE_HOST_SEND_COLOR = 77;
+	public static final int PACKAGE_HOST_SEND_BUTTON_INFO = 78;
+
+	public static final int PACKAGE_PING = 128;
+	public static final int PACKAGE_PONG = 129;
+
 	private static boolean b = true;
-	
-	public static void setVolume(int volume) {
-		try {
-			
-			Mixer.Info[] mixerInfos = AudioSystem.getMixerInfo();
-			for (int i = 0; i < mixerInfos.length; i++)
-			{
-				Mixer mixer = AudioSystem.getMixer(mixerInfos[i]);
 
-				Line.Info[] targetLineInfos = mixer.getTargetLineInfo();
 
-				for (int j = 0; j < targetLineInfos.length; j++) {
-					Line line = AudioSystem.getLine(targetLineInfos[j]);
-					line.open();
-					FloatControl control = (FloatControl) line.getControl(FloatControl.Type.VOLUME);
-					control.setValue( (float)(volume/100.0) );
-					line.close();
+	public static void clearStream(InputStream is){
+		new Thread(()->{
+			//noinspection CatchMayIgnoreException
+			try {
+				//noinspection StatementWithEmptyBody
+				while (is.read()!=-1);
+			}catch (IOException er){}
+		});
+	}
+
+	public static FloatControl getVolumeControl(Mixer mixer){
+		for (Line.Info targetLineInfo : mixer.getTargetLineInfo()) {
+			try {
+				Line line = mixer.getLine(targetLineInfo);
+
+				if (!line.isOpen()) line.open();
+				if (line.isControlSupported(FloatControl.Type.VOLUME)) {
+					return (FloatControl) line.getControl(FloatControl.Type.VOLUME);
 				}
-
+			}catch (LineUnavailableException er){
+				er.printStackTrace();
 			}
-		  
 		}
-		catch (Exception e) {
-			return;
+		return null;
+	}
+	public static FloatControl getVolumeControl(){
+		Mixer.Info[] mixerInfos = AudioSystem.getMixerInfo();
+		for (Mixer.Info mixerInfo : mixerInfos) {
+			Mixer mixer = AudioSystem.getMixer(mixerInfo);
+			return getVolumeControl(mixer);
 		}
+		return null;
+	}
+
+	public static void setVolume(int volume) {
+		System.out.println("Dźwięk: " + volume);
+		FloatControl control = getVolumeControl();
+		if(control != null) {
+			float volumeValue = (volume / 100.0f) * control.getMaximum() + control.getMinimum();
+			control.setValue(volumeValue);
+			log("\tZmiana dzwieku na: " + volumeValue + " ( " + control.getMinimum() + " - " + control.getMaximum() + ")");
+		}
+	}
+
+	public static int getVolume(){
+
+		FloatControl control = getVolumeControl();
+		if(control != null) {
+			return (int) (((control.getValue() - control.getMinimum()) / control.getMaximum()) * 100);
+		}
+		return 0;
 	}
 	
 	public static byte[] emptyPacket(){
-		byte[] packet = {0,0,0,0,0,0,0,0};
-		return packet;
+		return new byte[]{0,0,0,0,0,0,0,0};
 	}
 	
 	public static byte[] emptyPacket(byte type){
-		byte[] packet = {type,0,0,0,0,0,0,0};
-		return packet;
+		return new byte[]{type,0,0,0,0,0,0,0};
 	}
 	
 	public static void send(byte [] bytes, OutputStream os) throws IOException {
 			os.write(bytes);
 	}
 	
-	public static byte[] receive(byte [] data, InputStream is) throws IOException {
-
-		if (is.available() < 8) return data;
-		int r = is.read(data, 0, 8);
-		if(r == -1) return data;
-
-		return data;
+	public static int receive(byte [] data, InputStream is) throws IOException {
+		if (is.available() < 8) return 0;
+		return is.read(data, 0, 8);
 	}
 	
 	public static int byteToInt(byte hb, byte lb) {
@@ -154,6 +196,71 @@ public class Utils {
 			System.out.println(str);
 		}
 	}
+
+
+	public static String[] allMatched(Matcher m){
+		ArrayList<String> matched = new ArrayList<String>();
+		while (m.find()){
+			matched.add(m.group());
+		}
+		return matched.toArray(new String[0]);
+	}
+
+	/**
+	 * @return {current temperature , critical temperature}
+	 */
+	public static double[] getCurrTemp(){
+		try {
+			Process prc = Runtime.getRuntime().exec("sensors");
+			BufferedReader br = new BufferedReader(new InputStreamReader(prc.getInputStream()));
+
+			double curr = 0;
+			double crit = 0;
+			int n = 0;
+			String line;
+			Pattern pattern = Pattern.compile("(?<=[+-])([\\w\\d.]*)(?=°C)");
+			while ((line = br.readLine()) != null) {
+				if (!line.startsWith("Core")) continue;
+				Matcher m = pattern.matcher(line);
+				String[] tmps = allMatched(m);
+				if (tmps.length >= 3) {
+					curr += Double.parseDouble(tmps[0]);
+					crit += Double.parseDouble(tmps[2]);
+					++n;
+				}
+			}
+			prc.waitFor();
+			curr /= n;
+			crit /= n;
+			return new double[] {curr, crit};
+		}catch (IOException | InterruptedException er){
+			return new double[] {0,0};
+		}
+	}
+
+
+	/**
+	 * @return {free, used, max} in MB
+	 */
+	public static long[] getMemoryUsageMb(){
+		OperatingSystemMXBean operatingSystemMXBean = (OperatingSystemMXBean) ManagementFactory.getOperatingSystemMXBean();
+		long max =
+				operatingSystemMXBean.getTotalPhysicalMemorySize()
+						+ operatingSystemMXBean.getTotalSwapSpaceSize();
+
+		long free =
+				operatingSystemMXBean.getFreePhysicalMemorySize()
+						+ operatingSystemMXBean.getFreeSwapSpaceSize();
+
+		long used = max - free;
+
+		long maxMb = max/1024/1024;
+		long freeMb = free/1024/1024;
+		long usedMb = used/1024/1024;
+
+		return new long[] {freeMb, usedMb, maxMb};
+	}
+
 }
 
 

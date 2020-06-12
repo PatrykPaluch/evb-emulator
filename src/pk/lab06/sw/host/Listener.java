@@ -1,11 +1,10 @@
 package pk.lab06.sw.host;
 
+import com.sun.management.OperatingSystemMXBean;
 import pk.lab06.sw.program.Utils;
 
-import java.awt.color.ColorSpace;
-import java.awt.color.ICC_ColorSpace;
-import java.awt.color.ICC_ProfileRGB;
 import java.io.*;
+import java.lang.management.ManagementFactory;
 import java.util.Scanner;
 import java.awt.Toolkit;
 import java.awt.Robot;
@@ -13,22 +12,41 @@ import java.awt.Color;
 import java.awt.image.BufferedImage;
 import java.awt.Rectangle;
 
+import static pk.lab06.sw.program.Utils.PACKAGE_PANEL_ASK_FOR_VOLUME;
+import static pk.lab06.sw.program.Utils.PACKAGE_PANEL_ASK_FOR_SYSTEM_USAGE;
+import static pk.lab06.sw.program.Utils.PACKAGE_PANEL_ASK_FOR_SYSTEM_INFO;
+import static pk.lab06.sw.program.Utils.PACKAGE_PANEL_ASK_FOR_BUTTONS;
+import static pk.lab06.sw.program.Utils.PACKAGE_PANEL_SET_VOLUME;
+import static pk.lab06.sw.program.Utils.PACKAGE_PANEL_USE_BUTTON;
+
+import static pk.lab06.sw.program.Utils.PACKAGE_HOST_ASK_FOR_VOLUME;
+import static pk.lab06.sw.program.Utils.PACKAGE_HOST_SYSTEM_INFO;
+import static pk.lab06.sw.program.Utils.PACKAGE_HOST_SEND_VOLUME;
+import static pk.lab06.sw.program.Utils.PACKAGE_HOST_SEND_SYSTEM_USAGE;
+import static pk.lab06.sw.program.Utils.PACKAGE_HOST_SEND_COLOR;
+import static pk.lab06.sw.program.Utils.PACKAGE_HOST_SEND_BUTTON_INFO;
+
+import static pk.lab06.sw.program.Utils.PACKAGE_PING;
+import static pk.lab06.sw.program.Utils.PACKAGE_PONG;
+
+
 public class Listener implements Runnable {
+
 	InputStream is;
 	OutputStream os;
 	boolean isRunning;
-	double glosnosc; // TODO
 	Runtime runtime;
 	Button [] buttons;
 	long r1, g1, b1;
-	private static double lasfFrame = 0;
-	
+	private double lasfFrame = 0;
+	long lastVolumeFrame = System.currentTimeMillis();
+	int lastVolume = Utils.getVolume();
+
 	public Listener(InputStream is, OutputStream os) {
 		this.is = is;
 		this.os = os;
 		this.isRunning = true;
 		Utils.showLogs(false);
-		this.glosnosc = 75;
 		this.runtime = Runtime.getRuntime();
 		this.buttons = new Button[8];
 		for (int i=0; i<8; i++) {
@@ -40,7 +58,7 @@ public class Listener implements Runnable {
 		//DEBUG
 		loadButtons();
 	}
-	
+
 	void terminate() {
 		this.isRunning = false;
 		saveButtons();
@@ -93,6 +111,7 @@ public class Listener implements Runnable {
 	@Override
 	public void run() {	
 		try {
+
 			while(this.isRunning)
 			{
 				byte [] packet = Utils.emptyPacket();
@@ -103,47 +122,58 @@ public class Listener implements Runnable {
 					Utils.log( "Packed received: " + Utils.readableByte(packet[0]) );
 				
 				switch( Utils.readableByte(packet[0]) ) {
-					case 1:
+					case PACKAGE_PANEL_ASK_FOR_VOLUME:
 					{
 						Utils.log("\t[Prosba o wyslanie glosnosci]" );
 						
 						// send response
-						byte [] outgoing_packet = Utils.emptyPacket((byte)(75));
-						byte [] value = Utils.intToBytes((int)(this.glosnosc*100));
+						byte [] outgoing_packet = Utils.emptyPacket((byte)(PACKAGE_HOST_SEND_VOLUME));
+						byte [] value = Utils.intToBytes( Utils.getVolume() );
 						System.arraycopy(value, 0, outgoing_packet, 1, value.length);
 						Utils.send(outgoing_packet, os);
 						break;
 					}
-					case 2:
+					case PACKAGE_PANEL_ASK_FOR_SYSTEM_USAGE:
 					{
 						Utils.log("\t[Prosba o wyslanie danych obciazenia systemu]" );
 
+						long allocatedMemory = Utils.getMemoryUsageMb()[1];
+
+						double[] temp = Utils.getCurrTemp();
+						int curr = (int) temp[0];
+
 						// send response
-						long allocatedMemory = runtime.totalMemory()/1024;
 						Utils.log("\t[allocatedMemory] " + allocatedMemory);
-						byte [] outgoing_packet = Utils.emptyPacket((byte)(76));
+						byte [] outgoing_packet = Utils.emptyPacket((byte)(PACKAGE_HOST_SEND_SYSTEM_USAGE));
 						byte [] RAM = Utils.intToBytes( (int)(allocatedMemory) );
 
-						System.arraycopy(RAM, 0, outgoing_packet, 1, RAM.length);
-						outgoing_packet[6] = (byte)(60); // Brak łatwo dostepnego czujnika w javie, więc wartość testowo ustawiona na "sztywno".
+						System.arraycopy(RAM, 0, outgoing_packet, 1, Math.min(RAM.length, 4));
+						outgoing_packet[5] = (byte)(curr&0xFF);
+						outgoing_packet[6] = (byte)((curr>>8)&0xFF);
+
 						Utils.send(outgoing_packet, os);
 						break;
 					}
-					case 3:
+					case PACKAGE_PANEL_ASK_FOR_SYSTEM_INFO:
 					{
 						Utils.log("\t[Prosba o informacje o systemie]" );
 						
 						// send response
-						long maxMemory = runtime.maxMemory()/1024;
+						long maxMemory = Utils.getMemoryUsageMb()[2];
+
+						double[] temp = Utils.getCurrTemp();
+						int crit = (int) temp[1];
+
 						Utils.log("\t[maxMemory] " + maxMemory);
-						byte [] outgoing_packet = Utils.emptyPacket((byte)(74));
+						byte [] outgoing_packet = Utils.emptyPacket((byte)(PACKAGE_HOST_SYSTEM_INFO));
 						byte [] RAM = Utils.intToBytes( (int)(maxMemory) );
-						System.arraycopy(RAM, 0, outgoing_packet, 1, RAM.length);
-						outgoing_packet[6] = (byte)(85);
+						System.arraycopy(RAM, 0, outgoing_packet, 1, Math.min(RAM.length, 4));
+						outgoing_packet[5] = (byte)(crit&0xFF);
+						outgoing_packet[6] = (byte)((crit>>8)&0xFF);
 						Utils.send(outgoing_packet, os);
 						break;
 					}
-					case 4:
+					case PACKAGE_PANEL_ASK_FOR_BUTTONS:
 					{
 						int button_number = Utils.byteToInt( (byte)(0), packet[1] );
 						Utils.log("\t[Prosba o informacje o przycisku "+button_number+"]" );
@@ -151,7 +181,7 @@ public class Listener implements Runnable {
 						
 						byte[] b = this.buttons[button_number].getDescription().getBytes();
 
-						byte [] outgoing_packet = Utils.emptyPacket((byte)78);
+						byte [] outgoing_packet = Utils.emptyPacket((byte)PACKAGE_HOST_SEND_BUTTON_INFO);
 						outgoing_packet[1] = (byte)(button_number);
 						
 						for (int i = 2; i < 8 && i < b.length+2; i++) {
@@ -166,16 +196,16 @@ public class Listener implements Runnable {
 						Utils.send(outgoing_packet, os); // Second Packet
 						break;
 					}
-					case 10:
+					case PACKAGE_PANEL_SET_VOLUME:
 					{
 						int value = Utils.byteToInt( packet[1], packet[2]);
-						this.glosnosc = value / 1023.0;
+						value = (int) (value / 1023.0 * 100);
 						Utils.log("\tcontent: '" + value + "'" );
-						Utils.log("Ustawiono glosnosc na: " + (int)(this.glosnosc*100) + "%" );
-						Utils.setVolume((int)(this.glosnosc*100));
+						Utils.log("Ustawiono glosnosc na: " + value + "%" );
+						Utils.setVolume( value );
 						break;
 					}
-					case 11:
+					case PACKAGE_PANEL_USE_BUTTON:
 					{
 						try {
 							int button_number = Utils.byteToInt( (byte)(0), packet[1] );
@@ -184,15 +214,14 @@ public class Listener implements Runnable {
 							// Host po otrzymaniu powinien wykonać przypisaną do danego przycisku funkcję. Host sam ustala przypisane funkcje.
 							String [] cmd = {"/bin/bash", "-c", buttons[button_number].getCommand()};
 							Process process = runtime.exec(cmd, null);
-							
-							// deal with OutputStream to send inputs
-							process.getOutputStream();
-							 
+
 							// deal with InputStream to get ordinary outputs
-							process.getInputStream();
-							 
-							// deal with ErrorStream to get error outputs
-							process.getErrorStream();
+							InputStream is = process.getInputStream();
+							if(is != null) Utils.clearStream(is);
+
+							InputStream eis = process.getErrorStream();
+							if(eis != null) Utils.clearStream(eis);
+
 						}
 						catch (Exception e) {
 							Utils.log("Invalid command in button or command arguments.");
@@ -201,13 +230,13 @@ public class Listener implements Runnable {
 
 						break;
 					}
-					case 75:
+					case PACKAGE_HOST_SEND_VOLUME:
 					{
 						int intvalue = Utils.byteToInt( packet[1], packet[2]);
 						Utils.log("\tcontent: '" + intvalue + "'" );
 						break;
 					}
-					case 128:
+					case PACKAGE_PING:
 					{
 
 						// send response
@@ -218,7 +247,7 @@ public class Listener implements Runnable {
 						Utils.send(outgoing_packet, os);
 						break;
 					}
-					case 129:
+					case PACKAGE_PONG:
 					{
 						String str = new String(packet);
 						Utils.log("\tcontent: '" + str.substring(1, str.length()).replace("\0", "") + "'");
@@ -227,8 +256,24 @@ public class Listener implements Runnable {
 				}
 
 
+				if((System.currentTimeMillis() - lastVolumeFrame)>500){
+					lastVolumeFrame = System.currentTimeMillis();
+					int currVolume = Utils.getVolume();
+					if(currVolume != lastVolume) {
+						lastVolume = currVolume;
 
-				if((System.currentTimeMillis()-lasfFrame)>2000){
+						Utils.log("\t[Wyslanie glosnosci]");
+
+						// send response
+						byte[] outgoing_packet = Utils.emptyPacket((byte) (PACKAGE_HOST_SEND_VOLUME));
+						byte[] value = Utils.intToBytes(lastVolume);
+						System.arraycopy(value, 0, outgoing_packet, 1, value.length);
+						Utils.send(outgoing_packet, os);
+					}
+				}
+
+
+				if((System.currentTimeMillis()-lasfFrame)>1000){
 					BufferedImage image = new Robot().createScreenCapture(new Rectangle(Toolkit.getDefaultToolkit().getScreenSize()));
 					long r = 0, g = 0, b = 0;
 
@@ -245,7 +290,7 @@ public class Listener implements Runnable {
 					b = b / (image.getWidth()*image.getHeight());
 
 
-					if (Utils.colorDifference(r, g, b, r1, g1, b1) > 30) {
+					if (Utils.colorDifference(r, g, b, r1, g1, b1) > 5) {
 						byte[] outgoing_packet = Utils.emptyPacket((byte) 77);
 						outgoing_packet[1] = (byte) r;
 						outgoing_packet[2] = (byte) g;

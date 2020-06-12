@@ -38,7 +38,7 @@ class ButtonsConfigure {
 			}
 		}
 		catch (Exception ex) {
-			return;
+			ex.printStackTrace();
 		}
 	}
 	
@@ -76,7 +76,7 @@ class ButtonsConfigure {
 			
 		}
 		catch (Exception ex) {
-			return;
+			ex.printStackTrace();
 		}
 	}
 
